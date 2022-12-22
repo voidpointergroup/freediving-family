@@ -1,12 +1,11 @@
-schema: "./contract/schema.graphql"
+schema: "./res/contract/schema.graphql"
 overwrite: true
 generates:
-  ./src/__generated__/resolvers-types.ts:
+  ./src/__generated__/resolvers.ts:
     plugins:
       - typescript
       - typescript-resolvers
 config:
   federation: true
   defaultMapper: Partial<{T}>
-  typesPrefix: gql
   useIndexSignature: true

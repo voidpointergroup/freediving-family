@@ -8,6 +8,7 @@ COPY ./package-lock.json .
 RUN npm ci
 
 COPY . .
+RUN npx graphql-codegen --config ./codegen.yml
 RUN npx ncc build -m src/graphql.ts -o /app --target es2020
 RUN cp -R ./res /app
 
@@ -15,7 +16,7 @@ FROM node:16-alpine as runtime-env
 USER root
 
 WORKDIR /app
-COPY --from=build-env /app/* .
+COPY --from=build-env /app .
 
 USER 1000
 

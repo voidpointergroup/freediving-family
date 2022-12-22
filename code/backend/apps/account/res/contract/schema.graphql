@@ -5,6 +5,9 @@ extend type Test @key(fields: "id") {
 
 type Account @key(fields: "id") {
   id: String!
+  created_at: String!
+  updated_at: String!
+
   name: String!
 }
 
@@ -19,14 +22,14 @@ input UpdateAccountInput {
   name: String
 }
 
-type MutationAccount {
+type AccountMutation {
   id: String!
   update(in: UpdateAccountInput!): Account!
 }
 
 type Mutation {
   create_account(in: CreateAccountInput!): Account!
-  account(id: String!): MutationAccount!
+  account(id: String!): AccountMutation!
 }
 
 type Schema {

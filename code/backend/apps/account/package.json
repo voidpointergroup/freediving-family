@@ -7,7 +7,7 @@
   "type": "module",
   "description": "",
   "scripts": {
-    "run": "npx graphql-codegen --config ./codegen.yml && npx ts-node --esm src/graphql.ts"
+    "graphql": "npx graphql-codegen --config ./codegen.yml && npx ncc build -m src/graphql.ts -o ./dist/graphql --target es2020 && node dist/graphql/index.js"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^2.16.1",
@@ -18,7 +18,6 @@
     "@typescript-eslint/parser": "^5.47.0",
     "@vercel/ncc": "^0.36.0",
     "eslint": "^8.30.0",
-    "ts-node": "^10.9.1",
     "ttypescript": "^1.5.15",
     "typescript": "^4.9.4"
   },
@@ -27,6 +26,7 @@
     "@apollo/subgraph": "^2.2.2",
     "graphql": "^16.6.0",
     "graphql-tag": "^2.12.6",
-    "mongodb": "^4.13.0"
+    "mongodb": "^4.13.0",
+    "ulid": "^2.3.0"
   }
 }
