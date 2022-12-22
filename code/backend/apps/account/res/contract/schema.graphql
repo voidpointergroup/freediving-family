@@ -1,0 +1,34 @@
+extend type Test @key(fields: "id") {
+  id: String! @external
+  name: String!
+}
+
+type Account @key(fields: "id") {
+  id: String!
+  name: String!
+}
+
+type Query {
+  account(id: String!): Account!
+}
+
+input CreateAccountInput {
+  name: String!
+}
+input UpdateAccountInput {
+  name: String
+}
+
+type MutationAccount {
+  id: String!
+  update(in: UpdateAccountInput!): Account!
+}
+
+type Mutation {
+  create_account(in: CreateAccountInput!): Account!
+  account(id: String!): MutationAccount!
+}
+
+type Schema {
+  query: Query
+}

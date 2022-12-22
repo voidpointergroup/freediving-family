@@ -1,0 +1,32 @@
+{
+  "name": "account",
+  "version": "1.0.0",
+  "main": "",
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "description": "",
+  "scripts": {
+    "run": "npx graphql-codegen --config ./codegen.yml && npx ts-node --esm src/graphql.ts"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": "^2.16.1",
+    "@graphql-codegen/typescript": "^2.8.5",
+    "@graphql-codegen/typescript-resolvers": "^2.7.10",
+    "@types/node": "^18.11.17",
+    "@typescript-eslint/eslint-plugin": "^5.47.0",
+    "@typescript-eslint/parser": "^5.47.0",
+    "@vercel/ncc": "^0.36.0",
+    "eslint": "^8.30.0",
+    "ts-node": "^10.9.1",
+    "ttypescript": "^1.5.15",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.3.0",
+    "@apollo/subgraph": "^2.2.2",
+    "graphql": "^16.6.0",
+    "graphql-tag": "^2.12.6",
+    "mongodb": "^4.13.0"
+  }
+}
