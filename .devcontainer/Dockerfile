@@ -15,4 +15,4 @@ RUN snap install go --classic
 # install protobuf
 RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip
 RUN unzip protoc-21.12-linux-x86_64.zip -d $HOME/.local/bin
-RUN export PATH="$PATH:$HOME/.local/bin"
+RUN printf 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
