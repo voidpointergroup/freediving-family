@@ -14,6 +14,9 @@ RUN curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | ba
 RUN nvm install $NODE_VERSION && nvm alias default $NODE_VERSION
 
 # install go
+ENV GOROOT /usr/local/go
+ENV GOPATH $HOME/go
+ENV PATH $GOPATH/bin:$GOROOT/bin:$PATH 
 RUN wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
 RUN tar -xvf go1.19.linux-amd64.tar.gz
 RUN mv go /usr/local
