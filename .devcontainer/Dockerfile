@@ -1,7 +1,6 @@
 FROM ubuntu:22.04
 
 RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y snap
 RUN apt-get install -y git build-essentials ca-certificates g++ make curl wget unzip
 
 # install NVM & NPM
@@ -12,9 +11,6 @@ ENV PATH $NVM_DIR/v$NODE_VERSION/bin:$PATH
 
 RUN curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
 RUN nvm install $NODE_VERSION && nvm alias default $NODE_VERSION
-
-# install go
-RUN snap install go --classic
 
 # install protobuf
 RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip
