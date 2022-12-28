@@ -5,18 +5,15 @@ import * as gql from './__generated__/resolvers'
 import * as gqltag from 'graphql-tag'
 import * as fs from 'fs'
 import * as mongo from 'mongodb'
-import * as db from './db'
-import * as error from './error'
+import * as db from '../db'
+import * as error from '../error'
 import * as ulid from 'ulid'
 
-interface ServiceDB {
+interface Database {
     accounts: mongo.Collection<db.Account>
 }
 class ServiceContext {
-    public db: ServiceDB
-
-    constructor(db: ServiceDB) {
-        this.db = db
+    constructor(public db: Database) {
     }
 
     public async update<T extends db.WithTimestamps>(coll: mongo.Collection<T>, filter: mongo.Filter<T>, cb: (inDB: T) => Promise<T>): Promise<T> {
@@ -43,13 +40,13 @@ class ServiceContext {
 
 const resolvers: gql.Resolvers<ServiceContext> = {
     Query: {
-        account: async (_, params, svc): Promise<Partial<gql.Account>> => {
+        account: async (_parent, params, svc): Promise<Partial<gql.Account>> => {
             if (!params.id) {
                 throw error.Undef('id')
             }
 
             const doc = await svc.db.accounts.findOne({
-                _id: params.id
+                _id: params.id,
             })
             if (!doc) {
                 throw error.DocumentNotFound
@@ -59,7 +56,33 @@ const resolvers: gql.Resolvers<ServiceContext> = {
         },
     },
     Mutation: {
-        create_account: async (_, params, svc): Promise<Partial<gql.Account>> => {
+        account: async (_parent, params, _svc): Promise<Partial<gql.AccountMutation>> => {
+            return {
+                id: params.id,
+            }
+        },
+    },
+    Account: {
+        name: async (parent, _params, svc): Promise<string> => {
+            if (!parent.id) {
+                throw error.Undef('id')
+            }
+
+            const doc = await svc.db.accounts.findOne({
+                _id: parent.id,
+            })
+            if (!doc) {
+                throw error.DocumentNotFound
+            }
+            return doc.name
+        },
+    },
+    AccountMutation: {
+        create: async (parent, params, svc): Promise<Partial<gql.Account>> => {
+            if (parent.id) {
+                throw error.Undef('id')
+            }
+
             const now = new Date(Date.now()).toISOString()
             const doc: db.Account = {
                 _id: ulid.ulid().toLowerCase(),
@@ -72,35 +95,13 @@ const resolvers: gql.Resolvers<ServiceContext> = {
                 id: doc._id,
             }
         },
-        account: async (_, params, _svc): Promise<Partial<gql.AccountMutation>> => {
-            return {
-                id: params.id,
-            }
-        }
-    },
-    Account: {
-        name: async (partial, __, svc): Promise<string> => {
-            if (!partial.id) {
-                throw error.Undef('id')
-            }
-
-            const doc = await svc.db.accounts.findOne({
-                _id: partial.id
-            })
-            if (!doc) {
-                throw error.DocumentNotFound
-            }
-            return doc.name
-        }
-    },
-    AccountMutation: {
-        update: async (partial, params, svc): Promise<Partial<gql.Account>> => {
-            if (!partial.id) {
+        update: async (parent, params, svc): Promise<Partial<gql.Account>> => {
+            if (!parent.id) {
                 throw error.Undef('id')
             }
 
             const filter = {
-                _id: partial.id
+                _id: parent.id,
             }
 
             const doc = await svc.update(svc.db.accounts, filter, async (v) => {
@@ -111,8 +112,8 @@ const resolvers: gql.Resolvers<ServiceContext> = {
             })
 
             return svc.mapFixed(doc)
-        }
-    }
+        },
+    },
 }
 
 const schemaString = fs.readFileSync('./res/contract/schema.graphql', { encoding: 'utf-8' })
@@ -129,11 +130,11 @@ await apollo_standalone.startStandaloneServer(server, {
     context: async () => {
         const mongoUrl = 'mongodb://localhost:27017'
         const mongoClient = new mongo.MongoClient(mongoUrl, {
-            directConnection: true
+            directConnection: true,
         })
         const svc: ServiceContext = new ServiceContext({
-            accounts: mongoClient.db('ff-account').collection('accounts')
+            accounts: mongoClient.db('ff-account').collection('accounts'),
         })
         return svc
-    }
+    },
 })

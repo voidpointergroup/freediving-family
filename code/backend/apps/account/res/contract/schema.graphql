@@ -23,12 +23,13 @@ input UpdateAccountInput {
 }
 
 type AccountMutation {
-  id: String!
+  id: String
+
+  create(in: CreateAccountInput!): Account!
   update(in: UpdateAccountInput!): Account!
 }
 
 type Mutation {
-  create_account(in: CreateAccountInput!): Account!
   account(id: String!): AccountMutation!
 }
 

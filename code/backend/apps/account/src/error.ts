@@ -1,3 +1,7 @@
+export function Def(v: string): string {
+    return `${v} is defined`
+}
+
 export function Undef(v: string): string {
     return `${v} is not defined`
 }
