@@ -9,13 +9,14 @@ ENV PROTOC_VERSION 21.12
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y snap
 RUN apt-get install -y git build-essential ca-certificates g++ make curl wget unzip
-RUN apt-get install -y zsh
+RUN apt-get install -y zsh tmux neovim
 RUN chsh -s /bin/zsh
 
 # install rustup & cargo + tools
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 RUN . $HOME/.cargo/env && rustup default nightly
 ENV PATH /root/.cargo/bin:$PATH
+RUN cargo install lsd gitui
 
 # install NVM & NPM
 ENV NVM_DIR /usr/local/nvm
