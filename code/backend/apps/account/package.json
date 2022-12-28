@@ -7,7 +7,8 @@
   "type": "module",
   "description": "",
   "scripts": {
-    "graphql": "npx graphql-codegen --config ./codegen.yml && npx ncc build -m src/graphql.ts -o ./dist/graphql --target es2020 && node dist/graphql/index.js"
+    "codegen:graphql": "npx graphql-codegen --config ./codegen.yml",
+    "build": "npx ncc build -m src/graphql.ts -o ./dist/graphql --target es2020"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^2.16.1",

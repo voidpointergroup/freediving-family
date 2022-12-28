@@ -5,11 +5,11 @@ RUN apk add --update bash make git ca-certificates musl-dev gcc
 WORKDIR /code
 COPY ./package.json .
 COPY ./package-lock.json .
-RUN npm ci
+RUN npm i
 
 COPY . .
-RUN npx graphql-codegen --config ./codegen.yml
-RUN npx ncc build -m src/graphql.ts -o /app --target es2020
+RUN npm run codegen:graphql
+RUN npm run build
 RUN cp -R ./res /app
 
 FROM node:16-alpine as runtime-env
