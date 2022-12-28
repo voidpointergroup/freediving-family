@@ -6,23 +6,24 @@ import * as gqltag from 'graphql-tag'
 import * as fs from 'fs'
 import * as mongo from 'mongodb'
 import * as db from '../db'
+import * as db_lib_types from '../../../../libs/db/src/types'
 import * as error from '../error'
 import * as ulid from 'ulid'
 
 interface Database {
-    accounts: mongo.Collection<db.Account>
+    accounts: mongo.Collection<db.Account>,
 }
 class ServiceContext {
     constructor(public db: Database) {
     }
 
-    public async update<T extends db.WithTimestamps>(coll: mongo.Collection<T>, filter: mongo.Filter<T>, cb: (inDB: T) => Promise<T>): Promise<T> {
+    public async update<T extends db_lib_types.WithTimestamps>(coll: mongo.Collection<T>, filter: mongo.Filter<T>, cb: (inDB: T) => Promise<T>): Promise<T> {
         const doc = await coll.findOne(filter) as T | null
         if (!doc) {
             throw error.DocumentNotFound
         }
 
-        await db.autoSetUpdated(doc, async (doc) => {
+        await db_lib_types.autoSetUpdated(doc, async (doc) => {
             await cb(doc)
         })
         await coll.replaceOne(filter, doc)

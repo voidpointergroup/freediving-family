@@ -1,5 +1,5 @@
 {
-  "name": "service",
+  "name": "account",
   "version": "1.0.0",
   "main": "",
   "author": "",
@@ -8,7 +8,7 @@
   "description": "",
   "scripts": {
     "codegen:graphql": "graphql-codegen --config ./codegen.yml",
-    "build": "ncc build -m src/graphql/index.ts -o ./dist/graphql --target es2020"
+    "build:graphql": "npm run codegen:graphql && ncc build -m src/graphql/index.ts -o ./dist/graphql --target es2020"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^2.16.1",
