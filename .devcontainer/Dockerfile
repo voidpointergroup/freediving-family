@@ -44,4 +44,3 @@ RUN chmod +x /usr/local/bin/protoc
 RUN rm -rf ./protoc && rm protoc-$PROTOC_VERSION-linux-x86_64.zip
 
 ENTRYPOINT ["/bin/zsh"]
-
