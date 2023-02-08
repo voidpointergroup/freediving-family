@@ -1,38 +1,34 @@
-extend type Test @key(fields: "id") {
-  id: String! @external
-  name: String!
+type UserCollection {
+  edges: [UserEdge!]!
 }
-
-type Account @key(fields: "id") {
+type UserEdge {
+  cursor: String!
+  node: User!
+}
+type User @key(fields: "id") {
   id: String!
-  created_at: String!
-  updated_at: String!
 
-  name: String!
+  email: String!
 }
 
-type Query {
-  account(id: String!): Account!
+extend type Query {
+  myself: User!
 }
 
-input CreateAccountInput {
-  name: String!
-}
-input UpdateAccountInput {
-  name: String
+input UpdateUserInput {
+  avatar: String
 }
 
-type AccountMutation {
-  id: String
+type UserMutation {
+  id: String!
 
-  create(in: CreateAccountInput!): Account!
-  update(in: UpdateAccountInput!): Account!
+  update(input: UpdateUserInput!): User!
 }
 
-type Mutation {
-  account(id: String!): AccountMutation!
+extend type Mutation {
+  user(id: String!): UserMutation!
 }
 
-type Schema {
+schema {
   query: Query
 }

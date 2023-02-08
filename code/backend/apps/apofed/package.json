@@ -1,0 +1,27 @@
+{
+    "name": "apofed",
+    "main": "index.js",
+    "staticFiles": {
+        "staticPath": []
+    },
+    "scripts": {
+        "build:graphql": "npx ncc build -m src/graphql/index.ts -o ./dist/graphql --target es2020",
+        "build": "npm-run-all build:**"
+    },
+    "dependencies": {
+        "@apollo/federation": "^0.36.0",
+        "@apollo/gateway": "^2.0.0",
+        "apollo-server": "^3.6.4",
+        "graphql": "^16.3.0",
+        "js-base64": "^3.7.2",
+        "jsonwebtoken": "^8.5.1",
+        "jwks-rsa": "^3.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^14.17.9",
+        "@vercel/ncc": "^0.33.4",
+        "ts-node": "^10.2.0",
+        "ttypescript": "^1.5.12",
+        "typescript": "^4.3.5"
+    }
+}

@@ -1,5 +1,24 @@
-import * as db_lib_types from '../../../libs/db/src/types'
+export interface WithID<T> {
+    _id: T,
+}
 
-export interface Account extends db_lib_types.WithID<string>, db_lib_types.WithTimestamps {
-    name: string,
+export interface WithTimestamps {
+    _created_at: string,
+    _updated_at: string,
+}
+
+/**
+ * allows updating an object and automatically setting the updated timestamp
+ */
+export async function autoSetUpdated<T extends WithTimestamps>(doc: T, cb: (old: T) => Promise<void>): Promise<void> {
+    await cb(doc)
+    doc._updated_at = new Date(Date.now()).toISOString()
+}
+
+export interface ForeignKey<T> {
+    ref: T
+}
+
+export interface User extends WithID<string>, WithTimestamps {
+    avatar: string
 }
