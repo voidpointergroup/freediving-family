@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: system-config
+type: Opaque
+stringData:
+  {{- toYaml .Values.system.config | nindent 2 }}

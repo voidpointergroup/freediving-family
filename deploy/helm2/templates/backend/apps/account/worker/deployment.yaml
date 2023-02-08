@@ -1,0 +1,26 @@
+{{- if .Values.apps.service.account.worker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-worker
+spec:
+  selector:
+    matchLabels:
+      app: account-worker
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: {{ .Values.apps.service.account.worker.deployment.revisions }}
+  template:
+    metadata:
+      labels:
+        app: account-worker
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.apps.service.account.worker.deployment.ips | nindent 8 }}
+      containers:
+        - name: account-worker
+          image: {{ .Values.meta.repo }}/account-worker:{{ .Values.meta.tag }}
+          imagePullPolicy: Always
+          env:
+            {{- toYaml .Values.apps.service.account.worker.deployment.env | nindent 12 }}
+{{ end }}

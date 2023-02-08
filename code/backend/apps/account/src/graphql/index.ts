@@ -7,6 +7,7 @@ import * as fs from 'fs'
 import * as mongo from 'mongodb'
 import * as db from '../db'
 import * as yaml from 'yaml'
+import * as error from '../error'
 import * as nats from 'nats'
 import { NatsConnection } from 'nats'
 
@@ -35,7 +36,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
         myself: async (_partial, _params, ctx): Promise<Partial<gql.User>> => {
             return {
                 id: ctx.user.id,
-                email: '',
+                email: ctx.user.email,
             }
         },
     },
@@ -47,10 +48,19 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     UserMutation: {
-        update: async (_partial, _params, ctx): Promise<Partial<gql.User>> => {
+        update: async (partial, params, ctx): Promise<Partial<gql.User>> => {
+            const item = await ctx.svc.db.users.findOne({'_id': partial.id!})
+            if (!item) {
+                throw error.Undef(partial.id!)
+            }
+            if (params.input.avatar) {
+                item.avatar = params.input.avatar
+            }
+            await ctx.svc.db.users.replaceOne({'_id': item._id}, item)
+
             return {
                 id: ctx.user.id,
-                email: '',
+                email: ctx.user.email,
             }
         },
     }

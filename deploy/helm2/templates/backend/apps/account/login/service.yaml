@@ -1,0 +1,14 @@
+{{- if .Values.apps.service.account.login.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: account-login
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: account-login
+{{ end }}

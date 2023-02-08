@@ -1,0 +1,28 @@
+{{- if .Values.apps.service.apofed.graphql.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apofed-graphql
+spec:
+  selector:
+    matchLabels:
+      app: apofed-graphql
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: {{ .Values.apps.service.apofed.graphql.deployment.revisions }}
+  template:
+    metadata:
+      labels:
+        app: apofed-graphql
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.apps.service.apofed.graphql.deployment.ips | nindent 8 }}
+      containers:
+        - name: apofed-graphql
+          image: {{ .Values.meta.repo }}/apofed-graphql:{{ .Values.meta.tag }}
+          imagePullPolicy: Always
+          env:
+            {{- toYaml .Values.apps.service.apofed.graphql.deployment.env | nindent 12 }}
+          ports:
+            - containerPort: 8080
+{{ end }}

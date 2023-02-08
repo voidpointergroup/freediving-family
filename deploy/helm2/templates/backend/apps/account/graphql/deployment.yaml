@@ -1,0 +1,28 @@
+{{- if .Values.apps.service.account.graphql.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-graphql
+spec:
+  selector:
+    matchLabels:
+      app: account-graphql
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: {{ .Values.apps.service.account.graphql.deployment.revisions }}
+  template:
+    metadata:
+      labels:
+        app: account-graphql
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.apps.service.account.graphql.deployment.ips | nindent 8 }}
+      containers:
+        - name: account-graphql
+          image: {{ .Values.meta.repo }}/account-graphql:{{ .Values.meta.tag }}
+          imagePullPolicy: Always
+          env:
+            {{- toYaml .Values.apps.service.account.graphql.deployment.env | nindent 12 }}
+          ports:
+            - containerPort: 8080
+{{ end }}

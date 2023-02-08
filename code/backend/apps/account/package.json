@@ -11,7 +11,7 @@
         "codegen:graphql": "npx graphql-codegen --config ./codegen.yml",
         "codegen": "npm-run-all codegen:**",
         "build:graphql": "npm-run-all codegen:** && npx ncc build -m src/graphql/index.ts -o ./dist/graphql --target es2020",
-        "build:live": "npm-run-all codegen:** && npx ncc build src/live/index.ts -o ./dist/live --target es2020",
+        "build:worker": "npm-run-all codegen:** && npx ncc build src/worker/index.ts -o ./dist/worker --target es2020",
         "build": "npm-run-all build:**"
     },
     "devDependencies": {

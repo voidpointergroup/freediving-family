@@ -1,0 +1,17 @@
+apiVersion: v2
+name: "{{ chart }}"
+description: none
+
+type: application
+version: "{{ version }}"
+appVersion: "{{ version }}"
+
+dependencies:
+  - name: nats
+    alias: nats
+    version: "0.15.1"
+    repository: "https://nats-io.github.io/k8s/helm/charts/"
+  - name: mongodb
+    alias: mongodb
+    version: "13.6.1"
+    repository: "https://charts.bitnami.com/bitnami"

@@ -1,0 +1,20 @@
+{{- if .Values.apps.service.account.worker.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: account-worker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: account-worker
+  minReplicas: {{ .Values.apps.service.account.worker.hpa.min }}
+  maxReplicas: {{ .Values.apps.service.account.worker.hpa.max }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.apps.service.account.worker.hpa.cpu }}
+{{ end }}

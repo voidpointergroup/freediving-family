@@ -1,0 +1,25 @@
+version: 0.3
+
+env:
+  REGISTRY_PREFIX: harbor.chinook.k8s.voidpointergroup.com/freediving-family
+
+chains:
+  images:
+    matrix:
+      - - env:
+            APP: apofed
+            FLAVOR: graphql
+        - env:
+            APP: account
+            FLAVOR: graphql
+        - env:
+            APP: account
+            FLAVOR: worker
+    tasks:
+      - script: |
+          printf 'qSxgkZpMfKJ1oBRHDeBEk6eunTjiP4En' | docker login -u robot-freediving-family+ci --password-stdin harbor.chinook.k8s.voidpointergroup.com
+
+          cd code/backend/apps/$APP
+          export IMAGE_NAME=$REGISTRY_PREFIX/$APP-$FLAVOR:latest
+          docker build -f docker/Dockerfile --build-arg=app=$APP --build-arg=flavor=$FLAVOR -t $IMAGE_NAME ../../
+          docker push $IMAGE_NAME
