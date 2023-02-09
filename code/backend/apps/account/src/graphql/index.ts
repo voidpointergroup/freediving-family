@@ -11,6 +11,10 @@ import * as error from '../error'
 import * as nats from 'nats'
 import { NatsConnection } from 'nats'
 
+process.on('SIGINT', function() {
+    process.exit()
+})
+
 const sysconf = yaml.parse(process.env['APP_SYSCONF']!)
 
 interface ServiceDB {

@@ -2,9 +2,16 @@ import { ApolloServer } from 'apollo-server'
 import { GraphQLError } from "graphql"
 import { ApolloGateway, IntrospectAndCompose, GraphQLDataSourceProcessOptions, RemoteGraphQLDataSource } from '@apollo/gateway'
 import { GraphQLDataSourceRequestKind } from '@apollo/gateway/dist/datasources/types'
-import * as jwt from 'jsonwebtoken'
-import * as jwk from 'jwks-rsa'
+import * as bus from './__generated__/proto/bus/ts/bus/bus'
+import * as bus_topics from '../../../libs/bus/topics.json'
 import * as base64 from 'js-base64'
+import * as nats from 'nats'
+import * as yaml from 'yaml'
+
+process.on('SIGINT', function () {
+    process.exit()
+})
+const sysconf = yaml.parse(process.env['APP_SYSCONF']!)
 
 function getEnv(name: string): string {
     if (process.env[name] === undefined) {
@@ -12,10 +19,6 @@ function getEnv(name: string): string {
     }
     return process.env[name]!
 }
-
-const jwkClient = jwk.default({
-    jwksUri: getEnv("APP_KEYCLOAK_REALM_URL") + "/protocol/openid-connect/certs"
-});
 
 const config = {
     port: getEnv('APP_PORT'),
@@ -30,6 +33,26 @@ interface XContext {
     }
 }
 
+class Service {
+    constructor(private nc: nats.NatsConnection) { }
+
+    public async verify(jwt: string): Promise<bus.JwtVerificationResponse_JVRDetails> {
+        const resp = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`, bus.JwtVerificationRequest.encode({
+            jwt,
+        }).finish(), {
+            timeout: 2000,
+        })
+        const respD = bus.JwtVerificationResponse.decode(resp.data)
+        if (!respD.ok || !respD.details) {
+            throw new Error('jwt could not be verified')
+        }
+        return respD.details
+    }
+}
+const svc = new Service(await nats.connect({
+    servers: sysconf.bus.nats.url,
+}))
+
 class CustomDataSource extends RemoteGraphQLDataSource {
     override async willSendRequest(options: GraphQLDataSourceProcessOptions<any>,
     ): Promise<void> {
@@ -43,22 +66,13 @@ class CustomDataSource extends RemoteGraphQLDataSource {
                     throw 'did not specify JWT'
                 }
                 const token = (authHeader as string).substring('Bearer '.length);
-                const decoded = jwt.decode(token, { complete: true });
-                if (!decoded) {
-                    throw 'decoded is undefined or null'
-                }
-
-                const key = await jwkClient.getSigningKey(decoded.header.kid)
-                const ver = jwt.verify(token, key.getPublicKey(), {}) as jwt.JwtPayload
-                if (!ver) {
-                    throw 'verified jwt is of wrong type'
-                }
+                const verJwt = await svc.verify(token)
 
                 const context: XContext = {
                     user: {
-                        id: ver["email"] as string,
-                        email: ver["email"] as string,
-                        roles: ['admin']
+                        id: verJwt.id,
+                        email: verJwt.email,
+                        roles: verJwt.roles
                     }
                 }
 

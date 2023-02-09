@@ -1,49 +1,15 @@
 syntax = "proto3";
 package bus;
 
-message OperationEvent {
-  enum OperationEventState {
-    STATE_UNKNOWN = 0;
-    STATE_PENDING = 1;
-    STATE_RUNNING = 2;
-    STATE_COMPLETED = 3;
-  }
-  enum OperationEventResult {
-    RESULT_UNKNOWN = 0;
-    RESULT_OK = 1;
-    RESULT_ERROR = 2;
-  }
-  message OperationEventLogEntry {
-    string timestamp = 1;
-    string message = 2;
-  }
-
-  string id = 1;
-  optional OperationEventState set_state = 2;
-  optional OperationEventResult set_result = 3;
-  repeated OperationEventLogEntry events = 4;
+message JwtVerificationRequest {
+  string jwt = 1;
 }
-
-message AccessResourceEventRequest {
-  enum ARERAccessType {
-    ARERAT_CREATE = 0;
-    ARERAT_READ = 1;
-    ARERAT_UPDATE = 2;
-    ARERAT_DELETE = 3;
+message JwtVerificationResponse {
+  message JVRDetails {
+    string id = 1;
+    string email = 2;
+    repeated string roles = 3;
   }
-  string operation_id = 1;
-  string org_id = 2;
-  string resource_id = 3;
-  ARERAccessType access_type = 4;
-}
-
-message AccessResourceEventResponse {
-  bool permitted = 1;
-  optional string reason = 2;
-}
-
-message LinkResourceEvent {
-  string operation_id = 1;
-  string organization_id = 2;
-  string resource_id = 3;
+  bool ok = 1;
+  optional JVRDetails details = 2;
 }

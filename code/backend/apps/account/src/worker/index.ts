@@ -1,10 +1,21 @@
 import * as mongo from 'mongodb'
 import * as db from '../db'
+import * as bus from '../__generated__/proto/bus/ts/bus/bus'
 import * as bus_topics from '../../../../libs/bus/topics.json'
 import * as nats from 'nats'
 import * as yaml from 'yaml'
 
+process.on('SIGINT', function() {
+    process.exit()
+})
+
 const sysconf = yaml.parse(process.env['APP_SYSCONF']!)
+
+export interface JwtDetails {
+    id: string
+    email: string
+    roles: string[]
+}
 
 interface ServiceDB {
     users: mongo.Collection<db.User>
@@ -22,13 +33,15 @@ class ServiceContext {
         for await (const msg of sub) {
             try {
                 console.info(`processing message on ${msg.subject}`)
-                const response = undefined
                 switch (msg.subject) {
+                case `${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`:
+                    const req = bus.JwtVerificationRequest.decode(msg.data)
+                    const resp = await this.verify(req)
+                    msg.respond(bus.JwtVerificationResponse.encode(resp).finish(), {})
+                    break
                 default:
                     throw new Error(`unknown subject ${msg.subject}`)
                 }
-
-                msg.respond(response, {})
             } catch (error) {
                 console.error(error)
             }
@@ -46,6 +59,17 @@ class ServiceContext {
         }
 
         await Promise.any(allWorkers)
+    }
+
+    private async verify(_req: bus.JwtVerificationRequest): Promise<bus.JwtVerificationResponse> {
+        return {
+            ok: true,
+            details: {
+                id: '',
+                email: '',
+                roles: ['admin'],
+            }
+        }
     }
 }
 
