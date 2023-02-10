@@ -1,7 +1,10 @@
 version: 0.3
 
 env:
-  REGISTRY_PREFIX: harbor.chinook.k8s.voidpointergroup.com/freediving-family
+  REG_BASE: harbor.chinook.k8s.voidpointergroup.com
+  REG_PROJ: freediving-family
+  REG_USER: robot-freediving-family+ci
+  REG_PASS: qSxgkZpMfKJ1oBRHDeBEk6eunTjiP4En
 
 chains:
   images:
@@ -20,10 +23,10 @@ chains:
             FLAVOR: worker
     tasks:
       - script: |
-          printf 'qSxgkZpMfKJ1oBRHDeBEk6eunTjiP4En' | docker login -u robot-freediving-family+ci --password-stdin harbor.chinook.k8s.voidpointergroup.com
+          printf $REG_PASS | docker login -u $REG_USER --password-stdin $REG_BASE
 
           cd code/backend/apps/$APP
-          export IMAGE_NAME=$REGISTRY_PREFIX/$APP-$FLAVOR:{{ version }}
+          export IMAGE_NAME=$REG_BASE/$REG_PROJ/$APP-$FLAVOR:{{ version }}
           docker build -f docker/Dockerfile --build-arg=app=$APP --build-arg=flavor=$FLAVOR -t $IMAGE_NAME ../../
           docker push $IMAGE_NAME
 
@@ -36,4 +39,4 @@ chains:
           helm dependency build
           helm package .
           mv ./{{ chart }}-{{ version }}.tgz ./chart.tgz
-          curl -lLk -X POST -H 'Content-Type: multipart/form-data' -F 'chart=@./chart.tgz;type=application/x-compressed-tar' -H 'accept: application/json' -u robot-freediving-family+ci:qSxgkZpMfKJ1oBRHDeBEk6eunTjiP4En https://harbor.chinook.k8s.voidpointergroup.com/api/chartrepo/freediving-family/charts
+          curl -lLk -X POST -H 'Content-Type: multipart/form-data' -F 'chart=@./chart.tgz;type=application/x-compressed-tar' -H 'accept: application/json' -u $REG_USER:$REG_PASS https://$REG_BASE/api/chartrepo/$REG_PROJ/charts
