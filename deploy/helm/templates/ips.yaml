@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: internal-registry-marketplace
+  name: ips
 type: kubernetes.io/dockerconfigjson
 data:
-  .dockerconfigjson: {{ .Values.system.ips }}
+  .dockerconfigjson: "{{ .Values.system.ips }}"

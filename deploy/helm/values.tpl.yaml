@@ -3,7 +3,7 @@ meta:
   tag: "{{ meta.tag }}"
 
 system:
-  ips: "default"
+  ips: "eyJhdXRocyI6eyJoYXJib3IuY2hpbm9vay5rOHMudm9pZHBvaW50ZXJncm91cC5jb20iOnsidXNlcm5hbWUiOiJyb2JvdC1mcmVlZGl2aW5nLWZhbWlseSthcmdvY2QiLCJwYXNzd29yZCI6IktWWjdKSHpQeFE0aDZHbVp2cG1IYWU0bFFkUTUyRE83In19fQ=="
   config:
     yaml: |-
       database:
@@ -20,7 +20,7 @@ apps:
         enabled: true
         deployment:
           ips:
-            - name: internal-registry-marketplace
+            - name: ips
           revisions: 0
           env:
             - name: APP_PORT
@@ -37,7 +37,7 @@ apps:
         enabled: true
         deployment:
           ips:
-            - name: internal-registry-marketplace
+            - name: ips
           revisions: 0
           env:
             - name: APP_SYSCONF
@@ -54,7 +54,7 @@ apps:
         enabled: true
         deployment:
           ips:
-            - name: internal-registry-marketplace
+            - name: ips
           revisions: 0
           env:
             - name: APP_SYSCONF
@@ -71,7 +71,7 @@ apps:
         enabled: true
         deployment:
           ips:
-            - name: internal-registry-marketplace
+            - name: ips
           revisions: 0
           env:
             - name: APP_LOG_LEVEL
