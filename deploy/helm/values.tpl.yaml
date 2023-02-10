@@ -3,6 +3,7 @@ meta:
   tag: "{{ meta.tag }}"
 
 system:
+  ips: "default"
   config:
     yaml: |-
       database:
@@ -14,29 +15,9 @@ system:
 
 apps:
   service:
-    frontend:
-      enabled: true
-      service:
-        nodeport: { { frontend.service.nodeport.http } }
-      deployment:
-        ips:
-          - name: internal-registry-marketplace
-        revisions: 0
-        env:
-          - name: MARKETPLACE_API_BASE
-            value: "https://api-{{ mcamp.infra.rooturl }}.marketplace.nexteraanalytics.com"
-          - name: MARKETPLACE_GRAPHQL_URL
-            value: "https://api-{{ mcamp.infra.rooturl }}.marketplace.nexteraanalytics.com/graphql"
-      hpa:
-        min: 2
-        max: 4
-        cpu: 50
-
     apofed:
       graphql:
         enabled: true
-        service:
-          nodeport: { { apofed.service.nodeport.http } }
         deployment:
           ips:
             - name: internal-registry-marketplace
@@ -45,9 +26,7 @@ apps:
             - name: APP_PORT
               value: "8080"
             - name: APP_SERVICES
-              value: "http://ledger-graphql:8080/query,http://account-graphql:8080/query,http://application-graphql:8080/query,http://license-graphql:8080/query,http://template-graphql:8080/query"
-            - name: APP_KEYCLOAK_REALM_URL
-              value: "https://auth-{{ mcamp.infra.rooturl }}.marketplace.nexteraanalytics.com/auth/realms/mcamp"
+              value: "http://account-graphql:8080"
         hpa:
           min: 2
           max: 4
@@ -61,12 +40,6 @@ apps:
             - name: internal-registry-marketplace
           revisions: 0
           env:
-            - name: APP_PORT
-              value: "8080"
-            - name: APP_LOG_LEVEL
-              value: "INFO"
-            - name: APP_HTTP_LOG_FORMAT
-              value: '{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}","host":"${host}","user_agent":"${user_agent}","method":"${method}","path":"${path}","uri":"${uri}","referer":"${referer}","status":${status},"latency":${latency},"latency_human":"${latency_human}","bytes_in":${bytes_in},"bytes_out":${bytes_out},"headers":"{"Authorization": "${header:Authorization}"}","protocol":"${protocol}"}'
             - name: APP_SYSCONF
               valueFrom:
                 secretKeyRef:
@@ -79,19 +52,11 @@ apps:
           cpu: 50
       login:
         enabled: true
-        service:
-          nodeport: { { account.login.nodeport.http } }
         deployment:
           ips:
             - name: internal-registry-marketplace
           revisions: 0
           env:
-            - name: APP_PORT
-              value: "8080"
-            - name: APP_LOG_LEVEL
-              value: "INFO"
-            - name: APP_HTTP_LOG_FORMAT
-              value: '{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}","host":"${host}","user_agent":"${user_agent}","method":"${method}","path":"${path}","uri":"${uri}","referer":"${referer}","status":${status},"latency":${latency},"latency_human":"${latency_human}","bytes_in":${bytes_in},"bytes_out":${bytes_out},"headers":"{"Authorization": "${header:Authorization}"}","protocol":"${protocol}"}'
             - name: APP_SYSCONF
               valueFrom:
                 secretKeyRef:
@@ -156,4 +121,4 @@ mongodb:
     storageClass: ""
     accessModes:
       - ReadWriteOnce
-    size: 24Gi
+    size: 16Gi

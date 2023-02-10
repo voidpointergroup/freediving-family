@@ -11,6 +11,9 @@ chains:
             FLAVOR: graphql
         - env:
             APP: account
+            FLAVOR: login
+        - env:
+            APP: account
             FLAVOR: graphql
         - env:
             APP: account
@@ -20,6 +23,17 @@ chains:
           printf 'qSxgkZpMfKJ1oBRHDeBEk6eunTjiP4En' | docker login -u robot-freediving-family+ci --password-stdin harbor.chinook.k8s.voidpointergroup.com
 
           cd code/backend/apps/$APP
-          export IMAGE_NAME=$REGISTRY_PREFIX/$APP-$FLAVOR:latest
+          export IMAGE_NAME=$REGISTRY_PREFIX/$APP-$FLAVOR:{{ version }}
           docker build -f docker/Dockerfile --build-arg=app=$APP --build-arg=flavor=$FLAVOR -t $IMAGE_NAME ../../
           docker push $IMAGE_NAME
+
+  helm:
+    workdir: ./deploy/helm
+    tasks:
+      - script: |
+          complate -e render -t chart -v chart={{ chart }} -v version={{ version }} > ./Chart.yaml
+          complate -e render -t values -v meta.tag={{ tag }} > ./values.yaml
+          helm dependency build
+          helm package .
+          mv ./{{ chart }}-{{ version }}.tgz ./chart.tgz
+          curl -lLk -X POST -H 'Content-Type: multipart/form-data' -F 'chart=@./chart.tgz;type=application/x-compressed-tar' -H 'accept: application/json' -u robot-freediving-family+ci:qSxgkZpMfKJ1oBRHDeBEk6eunTjiP4En https://harbor.chinook.k8s.voidpointergroup.com/api/chartrepo/freediving-family/charts

@@ -1,0 +1,16 @@
+version: 0.10
+templates:
+  chart:
+    content:
+      file: ./Chart.tpl.yaml
+    values:
+      chart:
+        prompt: "chart"
+      version:
+        prompt: "version"
+  values:
+    content:
+      file: ./values.tpl.yaml
+    values:
+      meta.tag:
+        prompt: "meta.tag"
