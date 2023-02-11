@@ -1,0 +1,20 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ff-graphql
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`freediving-family.chinook.k8s.voidpointergroup.com`) && Path(`/v1/graphql`)
+      priority: 10
+      services:
+        - kind: Service
+          name: apofed-graphql
+          namespace: freediving-family
+          port: 8080
+          responseForwarding:
+            flushInterval: 1ms
+  tls:
+    certResolver: default

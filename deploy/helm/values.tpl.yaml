@@ -11,7 +11,7 @@ system:
           url: "mongodb://freediving-family-mongodb-headless:27017"
       bus:
         nats:
-          url: "http://marketplace-nats:4222"
+          url: "http://freediving-family-nats:4222"
 
 apps:
   service:
@@ -26,7 +26,13 @@ apps:
             - name: APP_PORT
               value: "8080"
             - name: APP_SERVICES
-              value: "http://account-graphql:8080"
+              value: "http://account-graphql:8080/query"
+            - name: APP_SYSCONF
+              valueFrom:
+                secretKeyRef:
+                  name: "system-config"
+                  key: "yaml"
+                  optional: false
         hpa:
           min: 2
           max: 4

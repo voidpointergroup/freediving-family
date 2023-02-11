@@ -6,14 +6,12 @@
     },
     "scripts": {
         "codegen:protoc:bus": "rm -rf ./src/__generated__/proto/bus && mkdir -p ./src/__generated__/proto/bus/ts && protoc -I ../../libs --plugin ./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out ./src/__generated__/proto/bus/ts ../../libs/bus/*.proto",
-        "codegen": "npm-run-all codegen:**",
-        "build:graphql": "npx ncc build -m src/graphql/index.ts -o ./dist/graphql --target es2020",
-        "build": "npm-run-all build:**"
+        "codegen": "npm-run-all codegen:**"
     },
     "dependencies": {
         "@apollo/federation": "^0.38.1",
-        "@apollo/gateway": "^2.0.0",
-        "apollo-server": "^3.6.4",
+        "@apollo/gateway": "^2.3.2",
+        "apollo-server": "^3.11.1",
         "graphql": "^16.3.0",
         "js-base64": "^3.7.2",
         "jsonwebtoken": "^9.0.0",

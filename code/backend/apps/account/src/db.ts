@@ -25,6 +25,6 @@ export interface User extends WithID<string>, WithTimestamps {
 }
 
 export interface Group extends WithID<string>, WithTimestamps {
-    extends_groups: string[]
+    extends_groups: ForeignKey<string>[]
     permissions: string[]
 }

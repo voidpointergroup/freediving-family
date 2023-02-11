@@ -8,15 +8,38 @@ type UserEdge {
 type User @key(fields: "id") {
   id: String!
 
-  email: String!
+  groups: [Group!]!
+}
+
+type GroupCollection {
+  edges: [GroupEdge!]!
+}
+type GroupEdge {
+  cursor: String!
+  node: Group!
+}
+type Group {
+  id: String!
+  name: String!
+  permissions: [String!]!
+  extends: [Group!]!
 }
 
 extend type Query {
   myself: User!
+
+  user(id: String!): User!
+  group(id: String!): Group!
 }
 
 input UpdateUserInput {
   avatar: String
+  groups: [String!]
+}
+
+input UpdateGroupInput {
+  extends: [String!]
+  permissions: [String!]
 }
 
 type UserMutation {
@@ -25,10 +48,18 @@ type UserMutation {
   update(input: UpdateUserInput!): User!
 }
 
+type GroupMutation {
+  id: String!
+
+  update(input: UpdateGroupInput!): Group!
+}
+
 extend type Mutation {
   user(id: String!): UserMutation!
+  group(id: String!): GroupMutation!
 }
 
 schema {
   query: Query
+  mutation: Mutation
 }

@@ -11,7 +11,6 @@ import * as yaml from 'yaml'
 process.on('SIGINT', function () {
     process.exit()
 })
-const sysconf = yaml.parse(process.env['APP_SYSCONF']!)
 
 function getEnv(name: string): string {
     if (process.env[name] === undefined) {
@@ -23,7 +22,9 @@ function getEnv(name: string): string {
 const config = {
     port: getEnv('APP_PORT'),
     services: getEnv('APP_SERVICES').split(','),
+    sysconf: yaml.parse(process.env['APP_SYSCONF']!),
 }
+console.info(JSON.stringify(config))
 
 interface XContext {
     user: {
@@ -48,7 +49,7 @@ class Service {
     }
 }
 const svc = new Service(await nats.connect({
-    servers: sysconf.bus.nats.url,
+    servers: config.sysconf.bus.nats.url,
 }))
 
 class CustomDataSource extends RemoteGraphQLDataSource {
@@ -56,6 +57,7 @@ class CustomDataSource extends RemoteGraphQLDataSource {
     ): Promise<void> {
         switch (options.kind) {
             case GraphQLDataSourceRequestKind.HEALTH_CHECK:
+                break;
             case GraphQLDataSourceRequestKind.LOADING_SCHEMA:
                 break;
             case GraphQLDataSourceRequestKind.INCOMING_OPERATION:
@@ -73,7 +75,7 @@ class CustomDataSource extends RemoteGraphQLDataSource {
                 }
 
                 console.info(JSON.stringify(context))
-                options.request.http!.headers.set('Authorization', authHeader)
+                // options.request.http!.headers.set('Authorization', authHeader)
                 const forwardContext = base64.btoa(JSON.stringify(context))
                 options.request.http!.headers.set('x-request-context', forwardContext)
 

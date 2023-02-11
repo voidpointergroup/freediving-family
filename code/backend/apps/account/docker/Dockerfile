@@ -10,10 +10,9 @@ WORKDIR /code/apps/$app
 COPY ./apps/$app/package.json .
 COPY ./apps/$app/package-lock.json .
 RUN npm i
-COPY ./apps/$app ./
 
-RUN npm run codegen:protoc:bus
-RUN npm run codegen:graphql
+COPY ./apps/$app ./
+RUN npm run codegen
 RUN npx ncc build src/$flavor/index.ts -o /app --target es2020
 RUN cp -R ./res /app
 
