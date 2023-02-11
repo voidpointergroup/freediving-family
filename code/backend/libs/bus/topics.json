@@ -2,7 +2,8 @@
     "auth": {
         "live": {
             "_root": "ff.bus.core.v1.live.auth",
-            "verify": "$verify"
+            "verify": "$verify",
+            "authorize": "$authorize"
         }
     }
 }

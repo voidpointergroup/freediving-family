@@ -7,9 +7,23 @@ message JwtVerificationRequest {
 message JwtVerificationResponse {
   message JVRDetails {
     string id = 1;
-    string email = 2;
-    repeated string roles = 3;
   }
   bool ok = 1;
   optional JVRDetails details = 2;
+}
+
+message AuthorizeRequest {
+  enum ARAction {
+    CREATE = 0;
+    READ = 1;
+    UPDATE = 2;
+    DELETE = 3;
+  }
+  string user_id = 1;
+  string resource_id = 2;
+  ARAction action = 3;
+}
+message AuthorizeResponse {
+  bool permitted = 1;
+  optional string reason = 2;
 }

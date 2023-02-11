@@ -6,21 +6,40 @@ env:
   REG_USER: robot-freediving-family+ci
   REG_PASS: qSxgkZpMfKJ1oBRHDeBEk6eunTjiP4En
 
+.services: &services
+  - env:
+      APP: apofed
+      FLAVOR: graphql
+  - env:
+      APP: account
+      FLAVOR: login
+  - env:
+      APP: account
+      FLAVOR: graphql
+  - env:
+      APP: account
+      FLAVOR: worker
+
 chains:
+  cmd:
+    matrix:
+      - *services
+    tasks:
+      - script: |
+          cd code/backend/apps/$APP
+          {{ cmd }}
+
+  codegen:
+    matrix:
+      - *services
+    tasks:
+      - script: |
+          cd code/backend/apps/$APP
+          npm run codegen
+
   images:
     matrix:
-      - - env:
-            APP: apofed
-            FLAVOR: graphql
-        - env:
-            APP: account
-            FLAVOR: login
-        - env:
-            APP: account
-            FLAVOR: graphql
-        - env:
-            APP: account
-            FLAVOR: worker
+      - *services
     tasks:
       - script: |
           printf $REG_PASS | docker login -u $REG_USER --password-stdin $REG_BASE

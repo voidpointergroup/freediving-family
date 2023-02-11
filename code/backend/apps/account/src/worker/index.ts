@@ -18,7 +18,8 @@ export interface JwtDetails {
 }
 
 interface ServiceDB {
-    users: mongo.Collection<db.User>
+    users: mongo.Collection<db.User>,
+    groups: mongo.Collection<db.Group>
 }
 class ServiceContext {
     public db: ServiceDB
@@ -33,13 +34,16 @@ class ServiceContext {
         for await (const msg of sub) {
             try {
                 console.info(`processing message on ${msg.subject}`)
-                switch (msg.subject) {
-                case `${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`:
+                if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`) {
                     const req = bus.JwtVerificationRequest.decode(msg.data)
                     const resp = await this.verify(req)
                     msg.respond(bus.JwtVerificationResponse.encode(resp).finish(), {})
+                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`) {
+                    const req = bus.AuthorizeRequest.decode(msg.data)
+                    const resp = await this.authorize(req)
+                    msg.respond(bus.AuthorizeResponse.encode(resp).finish(), {})
                     break
-                default:
+                } else {
                     throw new Error(`unknown subject ${msg.subject}`)
                 }
             } catch (error) {
@@ -65,11 +69,53 @@ class ServiceContext {
         return {
             ok: true,
             details: {
-                id: '',
-                email: '',
-                roles: ['admin'],
+                id: ''
             }
         }
+    }
+
+    private async authorize(req: bus.AuthorizeRequest): Promise<bus.AuthorizeResponse> {
+        const user = await this.db.users.findOne({'_id': req.userId})
+        if (!user) {
+            return {
+                permitted: false,
+                reason: 'user not found'
+            }
+        }
+        const perms = await this.collectGroupPermissions(user.groups)
+        if (perms.indexOf('admin') > -1) {
+            return {
+                permitted: true,
+                reason: 'is admin'
+            }
+        } else {
+            return {
+                permitted: false,
+                reason: 'unsufficient permissions'
+            }
+        }
+    }
+
+    private async collectGroupPermissions(roots: string[]): Promise<string[]> {
+        const groups = roots
+        const done = new Set<string>()
+        const perms = new Set<string>()
+
+        while (groups.length > 0) {
+            const g = groups.shift()!
+            done.add(g)
+
+            const gDb = await this.db.groups.findOne({'_id': g})
+            if (!gDb) {
+                console.error(`can not find group ${g}`)
+                continue
+            }
+            for (const perm in gDb.permissions) {
+                perms.add(perm)
+            }
+            groups.concat(gDb.extends_groups.filter(x => !done.has(x)))
+        }
+        return Array.from(perms.values())
     }
 }
 
@@ -80,6 +126,7 @@ const mongoUrl = sysconf.database.mongodb.url
 const mongoClient = new mongo.MongoClient(mongoUrl, {})
 
 const svc = new ServiceContext({
-    users: mongoClient.db('account').collection('users')
+    users: mongoClient.db('account').collection('users'),
+    groups: mongoClient.db('account').collection('groups')
 }, natsConn)
 await svc.run(4)

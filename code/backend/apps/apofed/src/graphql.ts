@@ -27,9 +27,7 @@ const config = {
 
 interface XContext {
     user: {
-        id: string,
-        email: string,
-        roles: string[],
+        id: string
     }
 }
 
@@ -70,9 +68,7 @@ class CustomDataSource extends RemoteGraphQLDataSource {
 
                 const context: XContext = {
                     user: {
-                        id: verJwt.id,
-                        email: verJwt.email,
-                        roles: verJwt.roles
+                        id: verJwt.id
                     }
                 }
 

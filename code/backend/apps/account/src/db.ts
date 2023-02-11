@@ -20,5 +20,11 @@ export interface ForeignKey<T> {
 }
 
 export interface User extends WithID<string>, WithTimestamps {
+    groups: string[],
     avatar: string
+}
+
+export interface Group extends WithID<string>, WithTimestamps {
+    extends_groups: string[]
+    permissions: string[]
 }
