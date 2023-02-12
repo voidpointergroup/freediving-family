@@ -20,7 +20,7 @@ export interface ForeignKey<T> {
 }
 
 export interface User extends WithID<string>, WithTimestamps {
-    groups: string[],
+    groups: ForeignKey<string>[],
     avatar: string
 }
 

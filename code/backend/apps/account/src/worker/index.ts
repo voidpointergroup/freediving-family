@@ -82,7 +82,7 @@ class ServiceContext {
                 reason: 'user not found'
             }
         }
-        const perms = await this.collectGroupPermissions(user.groups)
+        const perms = await this.collectGroupPermissions(user.groups.map(x => x.ref))
         if (perms.indexOf('admin') > -1) {
             return {
                 permitted: true,

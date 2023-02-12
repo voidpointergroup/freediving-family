@@ -60,6 +60,19 @@ const resolvers: gql.Resolvers<RequestContext> = {
             }
         },
     },
+    User: {
+        groups: async (partial, _params, ctx): Promise<Partial<gql.Group>[]> => {
+            const user = await ctx.svc.db.users.findOne({'_id': partial.id!})
+            if (!user) {
+                throw new Error(error.Undef(partial.id!))
+            }
+            return user.groups.map(x => {
+                return {
+                    id: x.ref,
+                }
+            })
+        },
+    },
     Mutation: {
         user: async (_partial, params, _ctx): Promise<Partial<gql.UserMutation>> => {
             return {
