@@ -154,9 +154,7 @@ const server = new apollo_server.ApolloServer<RequestContext>({
     schema: apollo_subgraph.buildSubgraphSchema({ typeDefs, resolvers }),
 })
 
-const mongoClient = new mongo.MongoClient(sysconf.database.mongodb.url, {
-    directConnection: true,
-})
+const mongoClient = new mongo.MongoClient(sysconf.database.mongodb.url, {})
 const natsConn = await nats.connect({
     servers: sysconf.bus.nats.url,
 })
