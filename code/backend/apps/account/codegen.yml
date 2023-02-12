@@ -5,7 +5,10 @@ generates:
     plugins:
       - typescript
       - typescript-resolvers
+      - "@graphql-codegen/add":
+          placement: prepend
+          content: "import { DeepPartial } from 'utility-types';"
 config:
   federation: true
-  defaultMapper: Partial<{T}>
+  defaultMapper: DeepPartial<{T}>
   useIndexSignature: true

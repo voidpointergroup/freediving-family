@@ -10,7 +10,7 @@ import * as db from '../db'
 import * as yaml from 'yaml'
 import * as error from '../error'
 import * as nats from 'nats'
-import { NatsConnection } from 'nats'
+import { DeepPartial } from 'utility-types'
 
 process.on('SIGINT', function() {
     process.exit()
@@ -24,7 +24,22 @@ interface ServiceDB {
 }
 
 class ServiceContext {
-    constructor(public db: ServiceDB, public nc: NatsConnection) {
+    constructor(public db: ServiceDB, public nc: nats.NatsConnection) {
+    }
+
+    public async readUser(id: string): Promise<db.User> {
+        const user = await this.db.users.findOne({'_id': id})
+        if (!user) {
+            throw new Error(error.Undef(id))
+        }
+        return user
+    }
+    public async readGroup(id: string): Promise<db.Group> {
+        const group = await this.db.groups.findOne({'_id': id})
+        if (!group) {
+            throw new Error(error.Undef(id))
+        }
+        return group
     }
 }
 
@@ -37,41 +52,32 @@ interface RequestContext {
 
 const resolvers: gql.Resolvers<RequestContext> = {
     Query: {
-        myself: async (_partial, _params, ctx): Promise<Partial<gql.User>> => {
+        myself: async (_partial, _params, ctx): Promise<DeepPartial<gql.User>> => {
             return {
                 id: ctx.userFn().id,
             }
         },
-        user: async (_partial, params, _ctx): Promise<Partial<gql.User>> => {
+        user: async (_partial, params, _ctx): Promise<DeepPartial<gql.User>> => {
             return {
                 id: params.id
             }
         },
-        group: async (_partial, params, ctx): Promise<Partial<gql.Group>> => {
-            const group = await ctx.svc.db.groups.findOne({'_id': params.id})
-            if (!group) {
-                throw new Error(error.Undef(params.id))
-            }
+        group: async (_partial, params, _ctx): Promise<DeepPartial<gql.Group>> => {
             return {
                 id: params.id,
             }
         },
     },
     User: {
-        __resolveReference: async (partial, ctx, _resolve): Promise<Partial<gql.User>> => {
-            const user = await ctx.svc.db.users.findOne({'_id': partial.id!})
-            if (!user) {
-                throw new Error(error.Undef(partial.id!))
-            }
+        __resolveReference: async (partial, ctx, _resolve): Promise<DeepPartial<gql.User>> => {
+            const user = await ctx.svc.readUser(partial.id!)
             return {
                 id: user._id,
             }
         },
-        groups: async (partial, _params, ctx): Promise<Partial<gql.Group>[]> => {
-            const user = await ctx.svc.db.users.findOne({'_id': partial.id!})
-            if (!user) {
-                throw new Error(error.Undef(partial.id!))
-            }
+        groups: async (partial, _params, ctx): Promise<DeepPartial<gql.Group>[]> => {
+            const user = await ctx.svc.readUser(partial.id!)
+
             return user.groups.map(x => {
                 return {
                     id: x.ref,
@@ -80,33 +86,30 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     Group: {
-        __resolveReference: async (partial, ctx, _resolve): Promise<Partial<gql.Group>> => {
-            const group = await ctx.svc.db.groups.findOne({'_id': partial.id!})
-            if (!group) {
-                throw new Error(error.Undef(partial.id!))
-            }
+        __resolveReference: async (partial, ctx, _resolve): Promise<DeepPartial<gql.Group>> => {
+            const group = await ctx.svc.readGroup(partial.id!)
             return {
                 id: group._id,
                 name: group._id,
-                extends: group.extends.map(x => { return { id: x.ref } as unknown as gql.Group }),
+                extends: group.extends.map(x => { return { id: x.ref } }),
                 permissions: group.permissions,
             }
         },
     },
     Mutation: {
-        user: async (_partial, params, _ctx): Promise<Partial<gql.UserMutation>> => {
+        user: async (_partial, params, _ctx): Promise<DeepPartial<gql.UserMutation>> => {
             return {
                 id: params.id,
             }
         },
-        group: async (_partial, params, _ctx): Promise<Partial<gql.GroupMutation>> => {
+        group: async (_partial, params, _ctx): Promise<DeepPartial<gql.GroupMutation>> => {
             return {
                 id: params.id,
             }
         },
     },
     UserMutation: {
-        update: async (partial, params, ctx): Promise<Partial<gql.User>> => {
+        update: async (partial, params, ctx): Promise<DeepPartial<gql.User>> => {
             const item = await ctx.svc.db.users.findOne({'_id': partial.id!})
             if (!item) {
                 throw error.Undef(partial.id!)
@@ -122,7 +125,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     GroupMutation: {
-        update: async (partial, params, ctx): Promise<Partial<gql.Group>> => {
+        update: async (partial, params, ctx): Promise<DeepPartial<gql.Group>> => {
             const item = await ctx.svc.db.groups.findOne({'_id': partial.id!})
             if (!item) {
                 throw error.Undef(partial.id!)
@@ -151,7 +154,9 @@ const server = new apollo_server.ApolloServer<RequestContext>({
     schema: apollo_subgraph.buildSubgraphSchema({ typeDefs, resolvers }),
 })
 
-const mongoClient = new mongo.MongoClient(sysconf.database.mongodb.url, {})
+const mongoClient = new mongo.MongoClient(sysconf.database.mongodb.url, {
+    directConnection: true,
+})
 const natsConn = await nats.connect({
     servers: sysconf.bus.nats.url,
 })

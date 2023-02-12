@@ -55,7 +55,7 @@ chains:
 
           cd code/backend/apps/{{ app }}
           export IMAGE_NAME=$REG_BASE/$REG_PROJ/{{ app }}-{{ flavor }}:{{ version }}
-          docker build --platform=linux/amd64 -f docker/Dockerfile --build-arg=app={{ app }} --build-arg=flavor={{ flavor }} -t $IMAGE_NAME ../../
+          docker build -f docker/Dockerfile --build-arg=app={{ app }} --build-arg=flavor={{ flavor }} -t $IMAGE_NAME ../../
           docker push $IMAGE_NAME
 
   images:

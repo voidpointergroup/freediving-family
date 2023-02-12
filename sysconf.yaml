@@ -1,0 +1,6 @@
+database:
+  mongodb:
+    url: "mongodb://host.docker.internal:27017"
+bus:
+  nats:
+    url: "http://host.docker.internal:4222"

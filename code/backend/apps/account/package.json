@@ -12,6 +12,7 @@
         "codegen": "npm-run-all codegen:**"
     },
     "devDependencies": {
+        "@graphql-codegen/add": "^4.0.0",
         "@graphql-codegen/cli": "^2.16.1",
         "@graphql-codegen/typescript": "^2.8.5",
         "@graphql-codegen/typescript-resolvers": "^2.7.10",
@@ -39,6 +40,7 @@
         "mongodb": "^4.13.0",
         "nats": "^2.10.2",
         "ulid": "^2.3.0",
+        "utility-types": "^3.10.0",
         "yaml": "^2.2.0"
     }
 }
