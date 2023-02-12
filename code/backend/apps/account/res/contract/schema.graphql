@@ -18,7 +18,7 @@ type GroupEdge {
   cursor: String!
   node: Group!
 }
-type Group {
+type Group @key(fields: "id") {
   id: String!
   name: String!
   permissions: [String!]!

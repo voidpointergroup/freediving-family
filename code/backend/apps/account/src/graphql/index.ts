@@ -61,6 +61,16 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     User: {
+        __resolveReference: async (partial, ctx, _resolve): Promise<Partial<gql.User>> => {
+            const user = await ctx.svc.db.users.findOne({'_id': partial.id!})
+            if (!user) {
+                throw new Error(error.Undef(partial.id!))
+            }
+            return {
+                id: user._id,
+                groups: user.groups.map(x => { return { id: x.ref } as unknown as gql.Group})
+            }
+        },
         groups: async (partial, _params, ctx): Promise<Partial<gql.Group>[]> => {
             const user = await ctx.svc.db.users.findOne({'_id': partial.id!})
             if (!user) {
@@ -71,6 +81,19 @@ const resolvers: gql.Resolvers<RequestContext> = {
                     id: x.ref,
                 }
             })
+        },
+    },
+    Group: {
+        __resolveReference: async (partial, ctx, _resolve): Promise<Partial<gql.Group>> => {
+            const group = await ctx.svc.db.groups.findOne({'_id': partial.id!})
+            if (!group) {
+                throw new Error(error.Undef(partial.id!))
+            }
+            return {
+                id: group._id,
+                extends: group.extends_groups.map(x => { return { id: x.ref } as unknown as gql.Group }),
+                permissions: group.permissions,
+            }
         },
     },
     Mutation: {
