@@ -27,19 +27,37 @@ class ServiceContext {
     constructor(public db: ServiceDB, public nc: nats.NatsConnection) {
     }
 
-    public async readUser(id: string): Promise<db.User> {
+    public async readUser(id: string): Promise<{db: db.User, graphql: () => DeepPartial<gql.User>}> {
         const user = await this.db.users.findOne({'_id': id})
         if (!user) {
             throw new Error(error.Undef(id))
         }
-        return user
+        return {
+            db: user,
+            graphql: () => {
+                return {
+                    id: user._id,
+                    name: user.name,
+                }
+            }
+        }
     }
-    public async readGroup(id: string): Promise<db.Group> {
+
+    public async readGroup(id: string): Promise<{db: db.Group, graphql: () => DeepPartial<gql.Group>}> {
         const group = await this.db.groups.findOne({'_id': id})
         if (!group) {
             throw new Error(error.Undef(id))
         }
-        return group
+        return {
+            db: group,
+            graphql: () => {
+                return {
+                    id: group._id,
+                    name: group._id,
+                    permissions: group.permissions,
+                }
+            }
+        }
     }
 }
 
@@ -53,46 +71,44 @@ interface RequestContext {
 const resolvers: gql.Resolvers<RequestContext> = {
     Query: {
         myself: async (_partial, _params, ctx): Promise<DeepPartial<gql.User>> => {
-            return {
-                id: ctx.userFn().id,
-            }
+            return (await ctx.svc.readUser(ctx.userFn().id)).graphql()
         },
-        user: async (_partial, params, _ctx): Promise<DeepPartial<gql.User>> => {
-            return {
-                id: params.id
-            }
+        user: async (_partial, params, ctx): Promise<DeepPartial<gql.User>> => {
+            return (await ctx.svc.readUser(params.id)).graphql()
         },
-        group: async (_partial, params, _ctx): Promise<DeepPartial<gql.Group>> => {
-            return {
-                id: params.id,
-            }
+        group: async (_partial, params, ctx): Promise<DeepPartial<gql.Group>> => {
+            return (await ctx.svc.readGroup(params.id)).graphql()
         },
     },
     User: {
         __resolveReference: async (partial, ctx, _resolve): Promise<DeepPartial<gql.User>> => {
+            return (await ctx.svc.readUser(partial.id!)).graphql()
+        },
+        groups: async (partial, _params, ctx): Promise<DeepPartial<gql.GroupCollection>> => {
             const user = await ctx.svc.readUser(partial.id!)
             return {
-                id: user._id,
+                edges: (await Promise.all(user.db.groups.map(x => ctx.svc.readGroup(x.ref)))).map(x => {
+                    return {
+                        cursor: x.db._id,
+                        node: x.graphql()
+                    }
+                })
             }
-        },
-        groups: async (partial, _params, ctx): Promise<DeepPartial<gql.Group>[]> => {
-            const user = await ctx.svc.readUser(partial.id!)
-
-            return user.groups.map(x => {
-                return {
-                    id: x.ref,
-                }
-            })
         },
     },
     Group: {
         __resolveReference: async (partial, ctx, _resolve): Promise<DeepPartial<gql.Group>> => {
+            return (await ctx.svc.readGroup(partial.id!)).graphql()
+        },
+        extends: async (partial, _params, ctx): Promise<DeepPartial<gql.GroupCollection>> => {
             const group = await ctx.svc.readGroup(partial.id!)
             return {
-                id: group._id,
-                name: group._id,
-                extends: group.extends.map(x => { return { id: x.ref } }),
-                permissions: group.permissions,
+                edges: (await Promise.all(group.db.extends.map(x => ctx.svc.readGroup(x.ref)))).map(x => {
+                    return {
+                        cursor: x.db._id,
+                        node: x.graphql()
+                    }
+                })
             }
         },
     },
@@ -120,7 +136,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             await ctx.svc.db.users.replaceOne({'_id': item._id}, item)
 
             return {
-                id: ctx.userFn().id,
+                id: item._id,
             }
         },
     },
@@ -141,20 +157,22 @@ const resolvers: gql.Resolvers<RequestContext> = {
             await ctx.svc.db.groups.replaceOne({'_id': item._id}, item)
 
             return {
-                id: ctx.userFn().id,
+                id: item._id,
             }
         },
     },
-
 }
 
 const schemaString = fs.readFileSync('./res/contract/schema.graphql', { encoding: 'utf-8' })
 const typeDefs = gqltag.gql`${schemaString} `
 const server = new apollo_server.ApolloServer<RequestContext>({
-    schema: apollo_subgraph.buildSubgraphSchema({ typeDefs, resolvers }),
+    schema: apollo_subgraph.buildSubgraphSchema({ typeDefs, resolvers })
 })
 
-const mongoClient = new mongo.MongoClient(sysconf.database.mongodb.url, {})
+const mongoClient = new mongo.MongoClient(sysconf.database.mongodb.url, {
+    directConnection: (process.env['LOCAL'] === '1') ? true : false,
+})
+
 const natsConn = await nats.connect({
     servers: sysconf.bus.nats.url,
 })

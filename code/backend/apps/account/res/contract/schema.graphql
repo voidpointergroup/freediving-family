@@ -7,8 +7,9 @@ type UserEdge {
 }
 type User @key(fields: "id") {
   id: String!
+  name: String!
 
-  groups: [Group!]!
+  groups: GroupCollection!
 }
 
 type GroupCollection {
@@ -22,7 +23,7 @@ type Group @key(fields: "id") {
   id: String!
   name: String!
   permissions: [String!]!
-  extends: [Group!]!
+  extends: GroupCollection!
 }
 
 extend type Query {
