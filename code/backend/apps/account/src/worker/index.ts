@@ -113,7 +113,7 @@ class ServiceContext {
             for (const perm in gDb.permissions) {
                 perms.add(perm)
             }
-            groups.concat(gDb.extends_groups.map(x => x.ref).filter(x => !done.has(x)))
+            groups.concat(gDb.extends.map(x => x.ref).filter(x => !done.has(x)))
         }
         return Array.from(perms.values())
     }

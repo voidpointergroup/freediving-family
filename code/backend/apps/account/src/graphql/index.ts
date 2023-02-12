@@ -54,9 +54,6 @@ const resolvers: gql.Resolvers<RequestContext> = {
             }
             return {
                 id: params.id,
-                name: group._id,
-                extends: group.extends_groups.map(x => { return { id: x.ref } as unknown as gql.Group }),
-                permissions: group.permissions.map(x => x.toString()),
             }
         },
     },
@@ -68,7 +65,6 @@ const resolvers: gql.Resolvers<RequestContext> = {
             }
             return {
                 id: user._id,
-                groups: user.groups.map(x => { return { id: x.ref } as unknown as gql.Group})
             }
         },
         groups: async (partial, _params, ctx): Promise<Partial<gql.Group>[]> => {
@@ -91,7 +87,8 @@ const resolvers: gql.Resolvers<RequestContext> = {
             }
             return {
                 id: group._id,
-                extends: group.extends_groups.map(x => { return { id: x.ref } as unknown as gql.Group }),
+                name: group._id,
+                extends: group.extends.map(x => { return { id: x.ref } as unknown as gql.Group }),
                 permissions: group.permissions,
             }
         },
@@ -130,8 +127,9 @@ const resolvers: gql.Resolvers<RequestContext> = {
             if (!item) {
                 throw error.Undef(partial.id!)
             }
+
             if (params.input.extends) {
-                item.extends_groups = params.input.extends.map(x => { return { ref: x } } )
+                item.extends = params.input.extends.map(x => { return { ref: x } } )
             }
             if (params.input.permissions) {
                 item.permissions = params.input.permissions
