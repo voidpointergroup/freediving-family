@@ -36,11 +36,15 @@ class ServiceContext {
                 console.info(`processing message on ${msg.subject}`)
                 if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`) {
                     const req = bus.JwtVerificationRequest.decode(msg.data)
+                    console.info(JSON.stringify(req))
                     const resp = await this.verify(req)
+                    console.info(JSON.stringify(resp))
                     msg.respond(bus.JwtVerificationResponse.encode(resp).finish(), {})
                 } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`) {
                     const req = bus.AuthorizeRequest.decode(msg.data)
+                    console.info(JSON.stringify(req))
                     const resp = await this.authorize(req)
+                    console.info(JSON.stringify(resp))
                     msg.respond(bus.AuthorizeResponse.encode(resp).finish(), {})
                     break
                 } else {
