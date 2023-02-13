@@ -7,6 +7,7 @@ import * as bus_topics from '../../../libs/bus/topics.json'
 import * as base64 from 'js-base64'
 import * as nats from 'nats'
 import * as yaml from 'yaml'
+import * as netctx from '../../../libs/netctx/src/index'
 
 process.on('SIGINT', function () {
     process.exit()
@@ -23,13 +24,6 @@ const config = {
     port: getEnv('APP_PORT'),
     services: getEnv('APP_SERVICES').split(','),
     sysconf: yaml.parse(process.env['APP_SYSCONF']!),
-}
-console.info(JSON.stringify(config))
-
-interface XContext {
-    user: {
-        id: string
-    }
 }
 
 class Service {
@@ -68,7 +62,7 @@ class CustomDataSource extends RemoteGraphQLDataSource {
                 const token = (authHeader as string).substring('Bearer '.length);
                 const verJwt = await svc.verify(token)
 
-                const context: XContext = {
+                const context: netctx.GatewayRequestContext = {
                     user: {
                         id: verJwt.id
                     }

@@ -43,6 +43,9 @@ chains:
       - - env:
             DIR: ids
             CMD: npm i
+        - env:
+            DIR: netctx
+            CMD: npm i
     tasks:
       - script: |
           cd $DIR

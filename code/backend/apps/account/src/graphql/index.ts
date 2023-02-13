@@ -11,6 +11,8 @@ import * as yaml from 'yaml'
 import * as error from '../error'
 import * as nats from 'nats'
 import * as ut from 'utility-types'
+import * as netctx from '../../../../libs/netctx/src/index'
+import { Lazy } from '../../../../libs/netctx/src/lazy'
 import * as bus from '../__generated__/proto/bus/ts/bus/bus'
 import * as bus_topics from '../../../../libs/bus/topics.json'
 
@@ -18,20 +20,9 @@ process.on('SIGINT', function() {
     process.exit()
 })
 
-const sysconf = yaml.parse(process.env['APP_SYSCONF']!)
-
-class Lazy<T> {
-    private _initialized = false
-    private _field: T | undefined = undefined
-
-    constructor(private _factory: () => T) {}
-    public instance(): T {
-        if (!this._initialized) {
-            this._field = this._factory()
-            this._initialized = true
-        }
-        return this._field!
-    }
+const config = {
+    sysconf: yaml.parse(process.env['APP_SYSCONF']!),
+    port: 8080
 }
 
 interface ServiceDB {
@@ -39,19 +30,13 @@ interface ServiceDB {
     groups: mongo.Collection<db.Group>
 }
 
-interface Identity {
-    user: {
-        id: string,
-    }
-}
-
 class ServiceContext {
-    constructor(public db: ServiceDB, public nc: nats.NatsConnection, public identity: Identity) {
+    constructor(public db: ServiceDB, public nc: nats.NatsConnection, public gwctx: netctx.GatewayRequestContext) {
     }
 
     private async access(action: string, resource: string): Promise<void> {
         const req = bus.AuthorizeRequest.encode({
-            userId: this.identity.user.id,
+            userId: this.gwctx.user.id,
             action: action,
             resourceId: resource
         }).finish()
@@ -107,7 +92,7 @@ interface RequestContext {
 const resolvers: gql.Resolvers<RequestContext> = {
     Query: {
         myself: async (_partial, _params, ctx): Promise<ut.DeepPartial<gql.User>> => {
-            return (await ctx.svc.instance().readUser(ctx.svc.instance().identity.user.id)).graphql()
+            return (await ctx.svc.instance().readUser(ctx.svc.instance().gwctx.user.id)).graphql()
         },
         user: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.User>> => {
             return (await ctx.svc.instance().readUser(params.id)).graphql()
@@ -214,29 +199,24 @@ const server = new apollo_server.ApolloServer<RequestContext>({
     schema: apollo_subgraph.buildSubgraphSchema({ typeDefs, resolvers })
 })
 
-const mongoClient = new mongo.MongoClient(sysconf.database.mongodb.url, {
+const mongoClient = new mongo.MongoClient(config.sysconf.database.mongodb.url, {
     directConnection: (process.env['LOCAL'] === '1') ? true : false,
 })
-
 const natsConn = await nats.connect({
-    servers: sysconf.bus.nats.url,
+    servers: config.sysconf.bus.nats.url,
 })
 
 await apollo_standalone.startStandaloneServer(server, {
     listen: {
-        port: 8080,
+        port: config.port,
     },
     context: async (ctx) => {
         const requestContext = ctx.req.headers['x-request-context'] ? JSON.parse(base64.atob(ctx.req.headers['x-request-context'] as string)) : undefined
         return {
             svc: new Lazy<ServiceContext>(() => new ServiceContext({
-                users: mongoClient.db('account').collection('users'),
-                groups: mongoClient.db('account').collection('groups')
-            }, natsConn, {
-                user: {
-                    id: requestContext.user.id
-                }
-            }))
+                users: mongoClient.db(db.DATABASE.db).collection(db.DATABASE.collections.users),
+                groups: mongoClient.db(db.DATABASE.db).collection(db.DATABASE.collections.groups)
+            }, natsConn, requestContext))
         }
     }
 })

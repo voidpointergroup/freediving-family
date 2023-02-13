@@ -9,7 +9,13 @@ process.on('SIGINT', function() {
     process.exit()
 })
 
-const sysconf = yaml.parse(process.env['APP_SYSCONF']!)
+const config = {
+    sysconf: yaml.parse(process.env['APP_SYSCONF']!),
+    worker: {
+        topic: `${bus_topics.auth.live._root}.>`,
+        queue: 'e7d64f3a-65ac-4956-958e-062692949539'
+    },
+}
 
 export interface JwtDetails {
     id: string
@@ -57,8 +63,8 @@ class ServiceContext {
     }
 
     public async run(workers: number): Promise<void> {
-        const sub = this.nc.subscribe(`${bus_topics.auth.live._root}.>`, {
-            queue: '8edb90bc-2bff-41cd-b0ed-85a9eb5d59c5',
+        const sub = this.nc.subscribe(config.worker.topic, {
+            queue: config.worker.queue,
         })
 
         const allWorkers = []
@@ -129,13 +135,13 @@ class ServiceContext {
 }
 
 const natsConn = await nats.connect({
-    servers: sysconf.bus.nats.url,
+    servers: config.sysconf.bus.nats.url,
 })
-const mongoUrl = sysconf.database.mongodb.url
+const mongoUrl = config.sysconf.database.mongodb.url
 const mongoClient = new mongo.MongoClient(mongoUrl, {})
 
 const svc = new ServiceContext({
-    users: mongoClient.db('account').collection('users'),
-    groups: mongoClient.db('account').collection('groups')
+    users: mongoClient.db(db.DATABASE.db).collection(db.DATABASE.collections.users),
+    groups: mongoClient.db(db.DATABASE.db).collection(db.DATABASE.collections.groups)
 }, natsConn)
 await svc.run(4)

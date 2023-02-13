@@ -15,8 +15,11 @@ export interface LoginResponse {
     refresh_expires_in: number
 }
 
-const sysconf = yaml.parse(process.env['APP_SYSCONF']!)
-const port = 8080
+const config = {
+    sysconf: yaml.parse(process.env['APP_SYSCONF']!),
+    port: 8080
+}
+
 const app = express.default()
 const jsonBodyParser = bp.json()
 
@@ -35,11 +38,11 @@ app.get('/login', async (req, res) => {
     const formData = new URLSearchParams()
     formData.append('grant_type', 'password')
     formData.append('scope', 'openid')
-    formData.append('client_id', sysconf.auth.keycloak.realm)
-    formData.append('client_secret', sysconf.auth.keycloak.client_secret)
+    formData.append('client_id', config.sysconf.auth.keycloak.realm)
+    formData.append('client_secret', config.sysconf.auth.keycloak.client_secret)
     formData.append('username', usernameAndPass[0]!)
     formData.append('password', usernameAndPass[1]!)
-    const loginResp = await cf.fetch(`${sysconf.auth.keycloak.endpoint}/realms/mcamp/protocol/openid-connect/token`, {
+    const loginResp = await cf.fetch(`${config.sysconf.auth.keycloak.endpoint}/realms/mcamp/protocol/openid-connect/token`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -65,10 +68,10 @@ app.get('/login/refresh', jsonBodyParser, async (req, res) => {
     const formData = new URLSearchParams()
     formData.append('grant_type', 'refresh_token')
     formData.append('scope', 'openid')
-    formData.append('client_id', sysconf.auth.keycloak.realm)
-    formData.append('client_secret', sysconf.auth.keycloak.client_secret)
+    formData.append('client_id', config.sysconf.auth.keycloak.realm)
+    formData.append('client_secret', config.sysconf.auth.keycloak.client_secret)
     formData.append('refresh_token', refresh_token)
-    const loginResp = await cf.fetch(`${sysconf.auth.keycloak.endpoint}/realms/mcamp/protocol/openid-connect/token`, {
+    const loginResp = await cf.fetch(`${config.sysconf.auth.keycloak.endpoint}/realms/mcamp/protocol/openid-connect/token`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -89,6 +92,6 @@ app.get('/login/refresh', jsonBodyParser, async (req, res) => {
     } as LoginResponse)
 })
 
-app.listen(port, () => {
-    console.info(`listening on port ${port}`)
+app.listen(config.port, () => {
+    console.info(`listening on port ${config.port}`)
 })

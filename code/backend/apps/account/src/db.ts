@@ -1,3 +1,11 @@
+export const DATABASE = {
+    db: 'account',
+    collections: {
+        users: 'users',
+        groups: 'groups'
+    }
+}
+
 export interface WithID<T> {
     _id: T,
 }
