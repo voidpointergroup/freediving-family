@@ -112,7 +112,7 @@ class ServiceContext {
     }
 
     private async collectGroupPermissions(roots: string[]): Promise<db.Permission[]> {
-        const groups = roots
+        let groups = roots
         const done = new Set<string>()
         const perms = new Set<db.Permission>()
 
@@ -128,7 +128,7 @@ class ServiceContext {
             for (const perm of gDb.permissions) {
                 perms.add(perm)
             }
-            groups.concat(gDb.extends.map(x => x.ref).filter(x => !done.has(x)))
+            groups = groups.concat(gDb.extends.map(x => x.ref).filter(x => !done.has(x)))
         }
         return Array.from(perms.values())
     }

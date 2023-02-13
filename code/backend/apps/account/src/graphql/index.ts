@@ -122,6 +122,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return (await ctx.svc.instance().readGroup(partial.id!)).graphql()
         },
         extends: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.GroupCollection>> => {
+            console.info(partial.id)
             const group = await ctx.svc.instance().readGroup(partial.id!)
             return {
                 edges: (await Promise.all(group.db.extends.map(x => ctx.svc.instance().readGroup(x.ref)))).map(x => {
