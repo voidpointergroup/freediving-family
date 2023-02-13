@@ -92,7 +92,7 @@ class ServiceContext {
             const ac = new RegExp(p.action)
             const rc = new RegExp(p.resource)
 
-            if (ac.test(p.action) && rc.test(p.resource)) {
+            if (ac.test(req.action) && rc.test(req.resourceId)) {
                 return {
                     permitted: true,
                 }
@@ -101,7 +101,7 @@ class ServiceContext {
 
         return {
             permitted: false,
-            reason: 'unsufficient permissions'
+            reason: 'insufficient permissions'
         }
     }
 
