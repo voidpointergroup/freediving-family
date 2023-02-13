@@ -13,15 +13,9 @@ message JwtVerificationResponse {
 }
 
 message AuthorizeRequest {
-  enum ARAction {
-    CREATE = 0;
-    READ = 1;
-    UPDATE = 2;
-    DELETE = 3;
-  }
   string user_id = 1;
   string resource_id = 2;
-  ARAction action = 3;
+  string action = 3;
 }
 message AuthorizeResponse {
   bool permitted = 1;
