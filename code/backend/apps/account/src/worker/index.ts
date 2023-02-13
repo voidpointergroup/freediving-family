@@ -54,6 +54,7 @@ class ServiceContext {
                 console.error(error)
             }
         }
+        console.error('(supposedly) infinite worker done')
     }
 
     public async run(workers: number): Promise<void> {
