@@ -46,7 +46,6 @@ class ServiceContext {
                     const resp = await this.authorize(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(bus.AuthorizeResponse.encode(resp).finish(), {})
-                    break
                 } else {
                     throw new Error(`unknown subject ${msg.subject}`)
                 }
