@@ -10,7 +10,7 @@ import * as db from '../db'
 import * as yaml from 'yaml'
 import * as error from '../error'
 import * as nats from 'nats'
-import { DeepPartial } from 'utility-types'
+import * as ut from 'utility-types'
 
 process.on('SIGINT', function() {
     process.exit()
@@ -27,7 +27,7 @@ class ServiceContext {
     constructor(public db: ServiceDB, public nc: nats.NatsConnection) {
     }
 
-    public async readUser(id: string): Promise<{db: db.User, graphql: () => DeepPartial<gql.User>}> {
+    public async readUser(id: string): Promise<{db: db.User, graphql: () => ut.DeepPartial<gql.User>}> {
         const user = await this.db.users.findOne({'_id': id})
         if (!user) {
             throw new Error(error.Undef(id))
@@ -43,7 +43,7 @@ class ServiceContext {
         }
     }
 
-    public async readGroup(id: string): Promise<{db: db.Group, graphql: () => DeepPartial<gql.Group>}> {
+    public async readGroup(id: string): Promise<{db: db.Group, graphql: () => ut.DeepPartial<gql.Group>}> {
         const group = await this.db.groups.findOne({'_id': id})
         if (!group) {
             throw new Error(error.Undef(id))
@@ -54,7 +54,7 @@ class ServiceContext {
                 return {
                     id: group._id,
                     name: group._id,
-                    permissions: group.permissions,
+                    permissions: group.permissions.map(x => `${x.action}+${x.resource}`),
                 }
             }
         }
@@ -70,21 +70,21 @@ interface RequestContext {
 
 const resolvers: gql.Resolvers<RequestContext> = {
     Query: {
-        myself: async (_partial, _params, ctx): Promise<DeepPartial<gql.User>> => {
+        myself: async (_partial, _params, ctx): Promise<ut.DeepPartial<gql.User>> => {
             return (await ctx.svc.readUser(ctx.userFn().id)).graphql()
         },
-        user: async (_partial, params, ctx): Promise<DeepPartial<gql.User>> => {
+        user: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.User>> => {
             return (await ctx.svc.readUser(params.id)).graphql()
         },
-        group: async (_partial, params, ctx): Promise<DeepPartial<gql.Group>> => {
+        group: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Group>> => {
             return (await ctx.svc.readGroup(params.id)).graphql()
         },
     },
     User: {
-        __resolveReference: async (partial, ctx, _resolve): Promise<DeepPartial<gql.User>> => {
+        __resolveReference: async (partial, ctx, _resolve): Promise<ut.DeepPartial<gql.User>> => {
             return (await ctx.svc.readUser(partial.id!)).graphql()
         },
-        groups: async (partial, _params, ctx): Promise<DeepPartial<gql.GroupCollection>> => {
+        groups: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.GroupCollection>> => {
             const user = await ctx.svc.readUser(partial.id!)
             return {
                 edges: (await Promise.all(user.db.groups.map(x => ctx.svc.readGroup(x.ref)))).map(x => {
@@ -97,10 +97,10 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     Group: {
-        __resolveReference: async (partial, ctx, _resolve): Promise<DeepPartial<gql.Group>> => {
+        __resolveReference: async (partial, ctx, _resolve): Promise<ut.DeepPartial<gql.Group>> => {
             return (await ctx.svc.readGroup(partial.id!)).graphql()
         },
-        extends: async (partial, _params, ctx): Promise<DeepPartial<gql.GroupCollection>> => {
+        extends: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.GroupCollection>> => {
             const group = await ctx.svc.readGroup(partial.id!)
             return {
                 edges: (await Promise.all(group.db.extends.map(x => ctx.svc.readGroup(x.ref)))).map(x => {
@@ -113,19 +113,19 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     Mutation: {
-        user: async (_partial, params, _ctx): Promise<DeepPartial<gql.UserMutation>> => {
+        user: async (_partial, params, _ctx): Promise<ut.DeepPartial<gql.UserMutation>> => {
             return {
                 id: params.id,
             }
         },
-        group: async (_partial, params, _ctx): Promise<DeepPartial<gql.GroupMutation>> => {
+        group: async (_partial, params, _ctx): Promise<ut.DeepPartial<gql.GroupMutation>> => {
             return {
                 id: params.id,
             }
         },
     },
     UserMutation: {
-        update: async (partial, params, ctx): Promise<DeepPartial<gql.User>> => {
+        update: async (partial, params, ctx): Promise<ut.DeepPartial<gql.User>> => {
             const item = await ctx.svc.db.users.findOne({'_id': partial.id!})
             if (!item) {
                 throw error.Undef(partial.id!)
@@ -141,7 +141,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     GroupMutation: {
-        update: async (partial, params, ctx): Promise<DeepPartial<gql.Group>> => {
+        update: async (partial, params, ctx): Promise<ut.DeepPartial<gql.Group>> => {
             const item = await ctx.svc.db.groups.findOne({'_id': partial.id!})
             if (!item) {
                 throw error.Undef(partial.id!)
@@ -151,7 +151,16 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 item.extends = params.input.extends.map(x => { return { ref: x } } )
             }
             if (params.input.permissions) {
-                item.permissions = params.input.permissions
+                item.permissions = params.input.permissions.map(x => {
+                    const items = x.split('+')
+                    if (items.length !== 2) {
+                        throw new Error('invalid resource')
+                    }
+                    return {
+                        action: items[0]!,
+                        resource: items[1]!
+                    }
+                })
             }
 
             await ctx.svc.db.groups.replaceOne({'_id': item._id}, item)

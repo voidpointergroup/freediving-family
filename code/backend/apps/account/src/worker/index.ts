@@ -65,11 +65,11 @@ class ServiceContext {
         await Promise.any(allWorkers)
     }
 
-    private async verify(_req: bus.JwtVerificationRequest): Promise<bus.JwtVerificationResponse> {
+    private async verify(req: bus.JwtVerificationRequest): Promise<bus.JwtVerificationResponse> {
         return {
             ok: true,
             details: {
-                id: 'userX'
+                id: req.jwt
             }
         }
     }
@@ -82,24 +82,29 @@ class ServiceContext {
                 reason: 'user not found'
             }
         }
-        const perms = await this.collectGroupPermissions(user.groups.map(x => x.ref))
-        if (perms.indexOf('admin') > -1) {
-            return {
-                permitted: true,
-                reason: 'is admin'
+
+        const perms = user.permissions.concat(await this.collectGroupPermissions(user.groups.map(x => x.ref)))
+        for (const p of perms) {
+            const ac = new RegExp(p.action)
+            const rc = new RegExp(p.resource)
+
+            if (ac.test(p.action) && rc.test(p.resource)) {
+                return {
+                    permitted: true,
+                }
             }
-        } else {
-            return {
-                permitted: false,
-                reason: 'unsufficient permissions'
-            }
+        }
+
+        return {
+            permitted: false,
+            reason: 'unsufficient permissions'
         }
     }
 
-    private async collectGroupPermissions(roots: string[]): Promise<string[]> {
+    private async collectGroupPermissions(roots: string[]): Promise<db.Permission[]> {
         const groups = roots
         const done = new Set<string>()
-        const perms = new Set<string>()
+        const perms = new Set<db.Permission>()
 
         while (groups.length > 0) {
             const g = groups.shift()!
@@ -110,7 +115,7 @@ class ServiceContext {
                 console.error(`can not find group ${g}`)
                 continue
             }
-            for (const perm in gDb.permissions) {
+            for (const perm of gDb.permissions) {
                 perms.add(perm)
             }
             groups.concat(gDb.extends.map(x => x.ref).filter(x => !done.has(x)))
