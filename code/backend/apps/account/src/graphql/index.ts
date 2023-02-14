@@ -35,13 +35,13 @@ class ServiceContext {
     }
 
     private async access(action: string, resource: string): Promise<void> {
-        const req = bus.AuthorizeRequest.encode({
+        const req = bus.Authorize_Request.encode({
             userId: this.gwctx.user.id,
             action: action,
             resourceId: resource
         }).finish()
         const response = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`, req)
-        const responseT = bus.AuthorizeResponse.decode(response.data)
+        const responseT = bus.Authorize_Response.decode(response.data)
         if (!responseT.permitted) {
             throw new Error(responseT.reason)
         }

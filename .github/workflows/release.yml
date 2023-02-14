@@ -24,6 +24,8 @@ jobs:
             flavor: "worker"
           - app: "certification"
             flavor: "graphql"
+          - app: "event"
+            flavor: "graphql"
     steps:
       - uses: actions/checkout@v3
       - name: install rust

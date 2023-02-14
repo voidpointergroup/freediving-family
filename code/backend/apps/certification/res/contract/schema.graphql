@@ -1,5 +1,8 @@
 extend type User @key(fields: "id") {
   id: String! @external
+
+  certs: [Cert!]!
+  cert_attempts: [CertAttempt!]!
 }
 
 extend type Group @key(fields: "id") {
@@ -53,6 +56,7 @@ extend type Query {
   cert(id: String!): Cert!
   cert_attempt(id: String!): CertAttempt!
   cert_template(id: String!): CertTemplate!
+  requirement(id: String!): Requirement!
 }
 
 input CertAttemptCreateInput {
@@ -74,9 +78,15 @@ type CertTemplateMutation {
   delete(id: String!): Boolean!
 }
 
+type RequirementMutation {
+  set_observed(id: String!, accomplished: Boolean!): Boolean!
+  set_approved(id: String!, accomplished: Boolean!): Boolean!
+}
+
 extend type Mutation {
   cert_attempt: CertAttemptMutation!
   cert_template: CertTemplateMutation!
+  requirement: RequirementMutation!
 }
 
 schema {

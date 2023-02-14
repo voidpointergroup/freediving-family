@@ -26,4 +26,17 @@ describe('IDs', () => {
         expect(id.parent!.prefix).toStrictEqual('parent')
         expect(id.parent!.id).toStrictEqual('A')
     })
+
+    test('Parse path', async() => {
+        const id = ID.parse('prefix:B#X')
+        expect(id.parent).not.toBeDefined()
+        expect(id.prefix).toStrictEqual('prefix')
+        expect(id.id).toStrictEqual('B')
+        expect(id.path).toStrictEqual('X')
+    })
+
+    test('From & To string', async() => {
+        const idStr = 'parent:A#X/prefix:B'
+        expect(ID.parse(idStr).toString()).toStrictEqual(idStr)
+    })
 })

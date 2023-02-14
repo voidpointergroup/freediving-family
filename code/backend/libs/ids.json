@@ -1,9 +1,13 @@
 {
     "unknown": "?",
     "wellknown": {
+        "user": "user",
+        "group": "group",
         "certs": "cert",
         "certAttempt": "ceratt",
         "certTemplate": "certem",
-        "requirement": "req"
+        "requirement": "req",
+        "event": "event",
+        "eventGroup": "eventGrp"
     }
 }

@@ -1,0 +1,28 @@
+{{- if .Values.apps.service.event.graphql.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-graphql
+spec:
+  selector:
+    matchLabels:
+      app: event-graphql
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: {{ .Values.apps.service.event.graphql.deployment.revisions }}
+  template:
+    metadata:
+      labels:
+        app: event-graphql
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.apps.service.event.graphql.deployment.ips | nindent 8 }}
+      containers:
+        - name: event-graphql
+          image: {{ .Values.meta.repo }}/event-graphql:{{ .Values.meta.tag }}
+          imagePullPolicy: Always
+          env:
+            {{- toYaml .Values.apps.service.event.graphql.deployment.env | nindent 12 }}
+          ports:
+            - containerPort: 8080
+{{ end }}

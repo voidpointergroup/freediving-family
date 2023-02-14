@@ -29,13 +29,13 @@ const config = {
 class Service {
     constructor(private nc: nats.NatsConnection) { }
 
-    public async verify(jwt: string): Promise<bus.JwtVerificationResponse_JVRDetails> {
-        const resp = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`, bus.JwtVerificationRequest.encode({
+    public async verify(jwt: string): Promise<bus.JwtVerification_Response_Details> {
+        const resp = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`, bus.JwtVerification_Request.encode({
             jwt,
         }).finish(), {
             timeout: 2000,
         })
-        const respD = bus.JwtVerificationResponse.decode(resp.data)
+        const respD = bus.JwtVerification_Response.decode(resp.data)
         if (!respD.ok || !respD.details) {
             throw new Error('jwt could not be verified')
         }

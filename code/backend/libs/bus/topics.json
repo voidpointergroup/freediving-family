@@ -3,7 +3,8 @@
         "live": {
             "_root": "ff.bus.core.v1.live.auth",
             "verify": "$verify",
-            "authorize": "$authorize"
+            "authorize": "$authorize",
+            "create_perm_group": "$create_perm_group"
         }
     }
 }

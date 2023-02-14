@@ -1,23 +1,42 @@
 syntax = "proto3";
 package bus;
 
-message JwtVerificationRequest {
-  string jwt = 1;
-}
-message JwtVerificationResponse {
-  message JVRDetails {
-    string id = 1;
+message JwtVerification {
+  message Request {
+    string jwt = 1;
   }
-  bool ok = 1;
-  optional JVRDetails details = 2;
+  message Response {
+    message Details {
+      string id = 1;
+    }
+    bool ok = 1;
+    optional Details details = 2;
+  }
 }
 
-message AuthorizeRequest {
-  string user_id = 1;
-  string resource_id = 2;
-  string action = 3;
+message Authorize {
+  message Request {
+    string user_id = 1;
+    string resource_id = 2;
+    string action = 3;
+  }
+  message Response {
+    bool permitted = 1;
+    optional string reason = 2;
+  }
 }
-message AuthorizeResponse {
-  bool permitted = 1;
-  optional string reason = 2;
+
+message AddPermissionGroup {
+  message Permission {
+    string action_regex = 1;
+    string resource_regex = 2;
+  }
+  message Request {
+    string name = 1;
+    repeated Permission permissions = 2;
+    repeated string extends = 3;
+  }
+  message Response {
+    string id = 1;
+  }
 }

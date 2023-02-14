@@ -4,6 +4,8 @@ import * as bus from '../__generated__/proto/bus/ts/bus/bus'
 import * as bus_topics from '../../../../libs/bus/topics.json'
 import * as nats from 'nats'
 import * as yaml from 'yaml'
+import * as ids from '../../../../libs/ids/src/index'
+import * as wkids from '../../../../libs/ids.json'
 
 process.on('SIGINT', function() {
     process.exit()
@@ -41,17 +43,23 @@ class ServiceContext {
             try {
                 console.info(`processing message on ${msg.subject}`)
                 if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`) {
-                    const req = bus.JwtVerificationRequest.decode(msg.data)
+                    const req = bus.JwtVerification_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.verify(req)
                     console.info(JSON.stringify(resp))
-                    msg.respond(bus.JwtVerificationResponse.encode(resp).finish(), {})
+                    msg.respond(bus.JwtVerification_Response.encode(resp).finish(), {})
                 } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`) {
-                    const req = bus.AuthorizeRequest.decode(msg.data)
+                    const req = bus.Authorize_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.authorize(req)
                     console.info(JSON.stringify(resp))
-                    msg.respond(bus.AuthorizeResponse.encode(resp).finish(), {})
+                    msg.respond(bus.Authorize_Response.encode(resp).finish(), {})
+                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`) {
+                    const req = bus.AddPermissionGroup_Request.decode(msg.data)
+                    console.info(JSON.stringify(req))
+                    const resp = await this.createPermGroup(req)
+                    console.info(JSON.stringify(resp))
+                    msg.respond(bus.AddPermissionGroup_Response.encode(resp).finish(), {})
                 } else {
                     throw new Error(`unknown subject ${msg.subject}`)
                 }
@@ -75,7 +83,7 @@ class ServiceContext {
         await Promise.any(allWorkers)
     }
 
-    private async verify(req: bus.JwtVerificationRequest): Promise<bus.JwtVerificationResponse> {
+    private async verify(req: bus.JwtVerification_Request): Promise<bus.JwtVerification_Response> {
         return {
             ok: true,
             details: {
@@ -84,7 +92,7 @@ class ServiceContext {
         }
     }
 
-    private async authorize(req: bus.AuthorizeRequest): Promise<bus.AuthorizeResponse> {
+    private async authorize(req: bus.Authorize_Request): Promise<bus.Authorize_Response> {
         const user = await this.db.users.findOne({'_id': req.userId})
         if (!user) {
             return {
@@ -99,15 +107,43 @@ class ServiceContext {
             const rc = new RegExp(p.resource)
 
             if (ac.test(req.action) && rc.test(req.resourceId)) {
+                console.info(`authorize ${req.action} for ${req.resourceId} granted for ${req.userId} via rule ("${p.action}" and "${p.resource}")`)
                 return {
                     permitted: true,
                 }
             }
         }
 
+        console.info(`authorize ${req.action} for ${req.resourceId} denied for ${req.userId}`)
         return {
             permitted: false,
             reason: 'insufficient permissions'
+        }
+    }
+
+    private async createPermGroup(req: bus.AddPermissionGroup_Request): Promise<bus.AddPermissionGroup_Response> {
+        const id = new ids.ID(wkids.wellknown.user)
+        const now = new Date().toISOString()
+        const grp: db.Group = {
+            _id: id.toString(),
+            _created_at: now,
+            _updated_at: now,
+            name: req.name,
+            permissions: req.permissions.map(x => {
+                return {
+                    action: x.actionRegex,
+                    resource: x.resourceRegex
+                }
+            }),
+            extends: req.extends.map(x => {
+                return {
+                    ref: x
+                }
+            })
+        }
+        await this.db.groups.insertOne(grp)
+        return {
+            id: id.toString()
         }
     }
 

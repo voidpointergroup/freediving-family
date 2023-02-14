@@ -5,7 +5,8 @@ export const DATABASE = {
     collections: {
         certs: 'certs',
         certAttempts: 'cert_attempts',
-        certTemplates: 'cert_templates'
+        certTemplates: 'cert_templates',
+        requirementAttempt: 'requirement_attempt'
     }
 }
 
@@ -16,7 +17,7 @@ export interface CertificateTemplate extends db.WithID<string>, db.WithTimestamp
     }[]
 }
 
-export interface RequirementAttempt extends db.WithID<string> {
+export interface Requirement extends db.WithID<string> {
     name: string
 
     observed: {
@@ -36,7 +37,7 @@ export interface CertificateAttempt extends db.WithID<string>, db.WithTimestamps
     started_at: string
     ends_at: string
 
-    requirements: RequirementAttempt[]
+    requirements: db.ForeignKey<string>[]
 }
 
 export interface Certificate extends db.WithID<string>, db.WithTimestamps {

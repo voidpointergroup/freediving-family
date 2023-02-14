@@ -1,0 +1,63 @@
+extend type User @key(fields: "id") {
+  id: String! @external
+}
+
+extend type Group @key(fields: "id") {
+  id: String! @external
+}
+
+type EventAttendee {
+  attendee: User!
+  role: String!
+}
+
+type EventGroup @key(fields: "id") {
+  id: String!
+  name: String!
+
+  members: [EventAttendee!]!
+}
+
+type Event @key(fields: "id") {
+  id: String!
+
+  name: String!
+  starts_at: String!
+  ends_at: String!
+
+  groups: [EventGroup!]!
+  perm_group: Group!
+}
+
+extend type Query {
+  event(id: String!): Event!
+}
+
+input EventCreateInput {
+  name: String!
+  starts_at: String!
+  ends_at: String!
+}
+
+input EventGroupCreateInput {
+  name: String!
+}
+
+type EventGroupMutation {
+  create(event_id: String!, input: EventGroupCreateInput!): EventGroup!
+}
+
+type EventMutation {
+  create(input: EventCreateInput!): Event!
+
+  group: EventGroupMutation!
+}
+
+extend type Mutation {
+  event: EventMutation!
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

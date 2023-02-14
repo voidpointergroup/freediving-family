@@ -1,0 +1,20 @@
+{{- if .Values.apps.service.event.graphql.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: event-graphql
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: event-graphql
+  minReplicas: {{ .Values.apps.service.event.graphql.hpa.min }}
+  maxReplicas: {{ .Values.apps.service.event.graphql.hpa.max }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.apps.service.event.graphql.hpa.cpu }}
+{{ end }}

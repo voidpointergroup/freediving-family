@@ -1,0 +1,14 @@
+schema: "./res/contract/schema.graphql"
+overwrite: true
+generates:
+  ./src/__generated__/graphql/resolvers.ts:
+    plugins:
+      - typescript
+      - typescript-resolvers
+      - "@graphql-codegen/add":
+          placement: prepend
+          content: "import { DeepPartial } from 'utility-types';"
+config:
+  federation: true
+  defaultMapper: DeepPartial<{T}>
+  useIndexSignature: true
