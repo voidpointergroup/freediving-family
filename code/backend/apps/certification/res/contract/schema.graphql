@@ -1,0 +1,85 @@
+extend type User @key(fields: "id") {
+  id: String! @external
+}
+
+extend type Group @key(fields: "id") {
+  id: String! @external
+}
+
+type RequirementTemplate {
+  name: String!
+}
+
+type Requirement @key(fields: "id") {
+  id: String!
+
+  name: String!
+
+  observed_by: User
+  observed_at: String
+
+  approved_by: User
+  approved_at: String
+}
+
+type CertTemplate @key(fields: "id") {
+  id: String!
+
+  name: String!
+  requirements: [RequirementTemplate!]!
+}
+
+type CertAttempt @key(fields: "id") {
+  id: String!
+  student: User!
+
+  started_at: String!
+  ends_at: String!
+
+  name: String!
+  requirements: [Requirement!]!
+}
+
+type Cert @key(fields: "id") {
+  id: String!
+
+  name: String!
+
+  awarded_by: User!
+  awarded_at: String!
+}
+
+extend type Query {
+  cert(id: String!): Cert!
+  cert_attempt(id: String!): CertAttempt!
+  cert_template(id: String!): CertTemplate!
+}
+
+input CertAttemptCreateInput {
+  student_id: String!
+  cert_template_id: String!
+}
+
+type CertAttemptMutation {
+  create(input: CertAttemptCreateInput!): CertAttempt!
+}
+
+input CertTemplateCreateInput {
+  name: String!
+  requirements: [String!]!
+}
+
+type CertTemplateMutation {
+  create(input: CertTemplateCreateInput!): CertTemplate!
+  delete(id: String!): Boolean!
+}
+
+extend type Mutation {
+  cert_attempt: CertAttemptMutation!
+  cert_template: CertTemplateMutation!
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

@@ -1,0 +1,20 @@
+{{- if .Values.apps.service.certification.graphql.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: certification-graphql
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: certification-graphql
+  minReplicas: {{ .Values.apps.service.certification.graphql.hpa.min }}
+  maxReplicas: {{ .Values.apps.service.certification.graphql.hpa.max }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.apps.service.certification.graphql.hpa.cpu }}
+{{ end }}

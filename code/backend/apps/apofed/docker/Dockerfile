@@ -6,6 +6,7 @@ RUN apk add --update bash make git ca-certificates musl-dev gcc protoc
 
 WORKDIR /code
 COPY ./libs ./libs
+RUN cd ./libs && bash install.sh && cd ../
 WORKDIR /code/apps/$app
 COPY ./apps/$app/package.json .
 COPY ./apps/$app/package-lock.json .

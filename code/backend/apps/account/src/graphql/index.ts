@@ -52,7 +52,7 @@ class ServiceContext {
 
         const user = await this.db.users.findOne({'_id': id})
         if (!user) {
-            throw new Error(error.Undef(id))
+            throw new Error(error.NotFound(id))
         }
         return {
             db: user,
@@ -70,14 +70,14 @@ class ServiceContext {
 
         const group = await this.db.groups.findOne({'_id': id})
         if (!group) {
-            throw new Error(error.Undef(id))
+            throw new Error(error.NotFound(id))
         }
         return {
             db: group,
             graphql: () => {
                 return {
                     id: group._id,
-                    name: group._id,
+                    name: group.name,
                     permissions: group.permissions.map(x => `${x.action}+${x.resource}`),
                 }
             }
@@ -122,7 +122,6 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return (await ctx.svc.instance().readGroup(partial.id!)).graphql()
         },
         extends: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.GroupCollection>> => {
-            console.info(partial.id)
             const group = await ctx.svc.instance().readGroup(partial.id!)
             return {
                 edges: (await Promise.all(group.db.extends.map(x => ctx.svc.instance().readGroup(x.ref)))).map(x => {
@@ -150,7 +149,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
         update: async (partial, params, ctx): Promise<ut.DeepPartial<gql.User>> => {
             const item = await ctx.svc.instance().db.users.findOne({'_id': partial.id!})
             if (!item) {
-                throw error.Undef(partial.id!)
+                throw error.NotFound(partial.id!)
             }
             if (params.input.avatar) {
                 item.avatar = params.input.avatar
@@ -166,7 +165,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
         update: async (partial, params, ctx): Promise<ut.DeepPartial<gql.Group>> => {
             const item = await ctx.svc.instance().db.groups.findOne({'_id': partial.id!})
             if (!item) {
-                throw error.Undef(partial.id!)
+                throw error.NotFound(partial.id!)
             }
 
             if (params.input.extends) {

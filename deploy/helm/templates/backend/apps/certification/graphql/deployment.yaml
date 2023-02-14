@@ -1,0 +1,28 @@
+{{- if .Values.apps.service.certification.graphql.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: certification-graphql
+spec:
+  selector:
+    matchLabels:
+      app: certification-graphql
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: {{ .Values.apps.service.certification.graphql.deployment.revisions }}
+  template:
+    metadata:
+      labels:
+        app: certification-graphql
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.apps.service.certification.graphql.deployment.ips | nindent 8 }}
+      containers:
+        - name: certification-graphql
+          image: {{ .Values.meta.repo }}/certification-graphql:{{ .Values.meta.tag }}
+          imagePullPolicy: Always
+          env:
+            {{- toYaml .Values.apps.service.certification.graphql.deployment.env | nindent 12 }}
+          ports:
+            - containerPort: 8080
+{{ end }}

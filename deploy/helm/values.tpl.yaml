@@ -26,7 +26,7 @@ apps:
             - name: APP_PORT
               value: "8080"
             - name: APP_SERVICES
-              value: "http://account-graphql:8080/query"
+              value: "http://account-graphql:8080/query,http://certification-graphql:8080/query"
             - name: APP_SYSCONF
               valueFrom:
                 secretKeyRef:
@@ -37,7 +37,6 @@ apps:
           min: 2
           max: 4
           cpu: 50
-
     account:
       graphql:
         enabled: true
@@ -82,6 +81,24 @@ apps:
           env:
             - name: APP_LOG_LEVEL
               value: "INFO"
+            - name: APP_SYSCONF
+              valueFrom:
+                secretKeyRef:
+                  name: "system-config"
+                  key: "yaml"
+                  optional: false
+        hpa:
+          min: 2
+          max: 4
+          cpu: 50
+    certification:
+      graphql:
+        enabled: true
+        deployment:
+          ips:
+            - name: ips
+          revisions: 0
+          env:
             - name: APP_SYSCONF
               valueFrom:
                 secretKeyRef:

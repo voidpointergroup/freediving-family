@@ -1,0 +1,9 @@
+{
+    "unknown": "?",
+    "wellknown": {
+        "certs": "cert",
+        "certAttempt": "ceratt",
+        "certTemplate": "certem",
+        "requirement": "req"
+    }
+}

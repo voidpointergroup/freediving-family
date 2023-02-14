@@ -19,6 +19,9 @@ env:
   - env:
       APP: account
       FLAVOR: worker
+  - env:
+      APP: certification
+      FLAVOR: graphql
 
 chains:
   cmd:
@@ -42,6 +45,9 @@ chains:
     matrix:
       - - env:
             DIR: ids
+            CMD: npm i
+        - env:
+            DIR: db
             CMD: npm i
         - env:
             DIR: netctx
