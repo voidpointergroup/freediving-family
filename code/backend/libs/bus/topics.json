@@ -4,6 +4,7 @@
             "_root": "ff.bus.core.v1.live.auth",
             "verify": "$verify",
             "authorize": "$authorize",
+            "give_permission": "$give_permission",
             "create_perm_group": "$create_perm_group",
             "add_user_to_perm_group": "$add_user_to_perm_group"
         }

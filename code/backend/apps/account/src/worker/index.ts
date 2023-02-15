@@ -54,6 +54,12 @@ class ServiceContext {
                     const resp = await this.authorize(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(bus.Authorize_Response.encode(resp).finish(), {})
+                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.give_permission}`) {
+                    const req = bus.GivePermission_Request.decode(msg.data)
+                    console.info(JSON.stringify(req))
+                    const resp = await this.givePermission(req)
+                    console.info(JSON.stringify(resp))
+                    msg.respond(bus.GivePermission_Response.encode(resp).finish(), {})
                 } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`) {
                     const req = bus.AddPermissionGroup_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
@@ -167,6 +173,27 @@ class ServiceContext {
             ref: group._id
         })
         await this.db.users.replaceOne({'_id': user._id}, user)
+        return {}
+    }
+
+    private async givePermission(req: bus.GivePermission_Request): Promise<bus.GivePermission_Response> {
+        if (req.userId) {
+            const item = (await this.db.users.findOne({'_id': req.userId}))!
+            item.permissions.push({
+                action: req.actionRegex,
+                resource: req.resourceRegex
+            })
+            await this.db.users.replaceOne({'_id': req.userId}, item)
+        } else if (req.groupId) {
+            const item = (await this.db.groups.findOne({'_id': req.groupId}))!
+            item.permissions.push({
+                action: req.actionRegex,
+                resource: req.resourceRegex
+            })
+            await this.db.groups.replaceOne({'_id': req.groupId}, item)
+        } else {
+            throw new Error('unvalid request')
+        }
         return {}
     }
 

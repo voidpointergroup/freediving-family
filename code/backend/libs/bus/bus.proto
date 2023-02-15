@@ -26,6 +26,19 @@ message Authorize {
   }
 }
 
+message GivePermission {
+  message Request {
+    oneof type {
+      string user_id = 1;
+      string group_id = 2;
+    }
+    string action_regex = 3;
+    string resource_regex = 4;
+  }
+  message Response {
+  }
+}
+
 message AddPermissionGroup {
   message Permission {
     string action_regex = 1;

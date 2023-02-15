@@ -293,6 +293,16 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 })
             }
             await ctx.svc.instance().db.certAttempts.insertOne(item)
+
+            // allow user to read their own certattempt
+            const permReq: bus.GivePermission_Request = {
+                userId: item.student.ref,
+                actionRegex: 'read',
+                resourceRegex: `^(${item._id})$`
+            }
+            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.give_permission}`,
+                bus.GivePermission_Request.encode(permReq).finish())
+
             return (await ctx.svc.instance().readCertAttempt(cerattID.toString())).graphql()
         },
     },
