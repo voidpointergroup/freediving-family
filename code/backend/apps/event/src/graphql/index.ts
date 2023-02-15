@@ -173,6 +173,14 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 name: `${params.input.name} - Head Instructors`,
                 permissions: [],
                 extends: [eventPermGroupReqD.id]
+            }, {
+                name: `${params.input.name} - Instructors`,
+                permissions: [],
+                extends: [eventPermGroupReqD.id]
+            }, {
+                name: `${params.input.name} - Students`,
+                permissions: [],
+                extends: [eventPermGroupReqD.id]
             }]
             const groupIDs: string[] = [eventPermGroupReqD.id]
             for (const req of reqs) {
@@ -218,6 +226,47 @@ const resolvers: gql.Resolvers<RequestContext> = {
             await ctx.svc.instance().db.eventGroups.insertOne(item)
 
             return (await ctx.svc.instance().readEventGroup(id.toString())).graphql()
+        },
+        add_attendee: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.EventAttendee>> => {
+            if (!await ctx.svc.instance().access('update', ids.ID.parse(params.group_id).toString())) {
+                throw new Error('insufficient permissions')
+            }
+
+            const group = await ctx.svc.instance().readEventGroup(params.group_id)
+            const event = await ctx.svc.instance().readEvent(group.db.event.ref)
+
+            group.db.attendees.push({
+                attendee: {
+                    ref: params.input.user_id
+                },
+                role: params.input.role,
+            })
+
+            // this sucks
+            let permG: string | undefined = undefined
+            if (params.input.role === 'student') {
+                permG = event.db.perm_groups[2]!.ref
+            } else if (params.input.role === 'instructor') {
+                permG = event.db.perm_groups[1]!.ref
+            } else if (params.input.role === 'head-instructor') {
+                permG = event.db.perm_groups[0]!.ref
+            } else {
+                throw new Error('unknown role')
+            }
+
+            const addUserToPermGroupReq: bus.AddUserToGroup_Request = {
+                userId: params.input.user_id,
+                groupId: permG,
+            }
+            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
+                bus.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
+
+            return {
+                attendee: {
+                    id: params.input.user_id,
+                },
+                role: params.input.role
+            }
         },
     }
 }

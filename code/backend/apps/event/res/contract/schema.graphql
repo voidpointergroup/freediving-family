@@ -43,8 +43,15 @@ input EventGroupCreateInput {
   name: String!
 }
 
+input AddAttendeeToEventGroupInput {
+  user_id: String!
+  role: String!
+}
+
 type EventGroupMutation {
   create(event_id: String!, input: EventGroupCreateInput!): EventGroup!
+
+  add_attendee(group_id: String!, input: AddAttendeeToEventGroupInput!): EventAttendee!
 }
 
 type EventMutation {

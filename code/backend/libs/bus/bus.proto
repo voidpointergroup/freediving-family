@@ -40,3 +40,12 @@ message AddPermissionGroup {
     string id = 1;
   }
 }
+
+message AddUserToGroup {
+  message Request {
+    string user_id = 1;
+    string group_id = 2;
+  }
+  message Response {
+  }
+}

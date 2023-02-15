@@ -60,6 +60,12 @@ class ServiceContext {
                     const resp = await this.createPermGroup(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(bus.AddPermissionGroup_Response.encode(resp).finish(), {})
+                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`) {
+                    const req = bus.AddUserToGroup_Request.decode(msg.data)
+                    console.info(JSON.stringify(req))
+                    const resp = await this.addUserToPermGroup(req)
+                    console.info(JSON.stringify(resp))
+                    msg.respond(bus.AddUserToGroup_Response.encode(resp).finish(), {})
                 } else {
                     throw new Error(`unknown subject ${msg.subject}`)
                 }
@@ -145,6 +151,23 @@ class ServiceContext {
         return {
             id: id.toString()
         }
+    }
+
+    private async addUserToPermGroup(req: bus.AddUserToGroup_Request): Promise<bus.AddUserToGroup_Response> {
+        const group = await this.db.groups.findOne({'_id': req.groupId})
+        const user = await this.db.users.findOne({'_id': req.userId})
+        if (!group) {
+            throw new Error('group not found')
+        }
+        if (!user) {
+            throw new Error('user not found')
+        }
+
+        user.groups.push({
+            ref: group._id
+        })
+        await this.db.users.replaceOne({'_id': user._id}, user)
+        return {}
     }
 
     private async collectGroupPermissions(roots: string[]): Promise<db.Permission[]> {

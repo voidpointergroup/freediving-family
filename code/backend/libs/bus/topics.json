@@ -4,7 +4,8 @@
             "_root": "ff.bus.core.v1.live.auth",
             "verify": "$verify",
             "authorize": "$authorize",
-            "create_perm_group": "$create_perm_group"
+            "create_perm_group": "$create_perm_group",
+            "add_user_to_perm_group": "$add_user_to_perm_group"
         }
     }
 }
