@@ -171,15 +171,24 @@ const resolvers: gql.Resolvers<RequestContext> = {
 
             const reqs: bus.AddPermissionGroup_Request[] = [{
                 name: `${params.input.name} - Head Instructors`,
-                permissions: [],
+                permissions: [{
+                    resourceRegex: `^(${wkids.wellknown.certAttempt}.*)$`,
+                    actionRegex: '.*'
+                }],
                 extends: [eventPermGroupReqD.id]
             }, {
                 name: `${params.input.name} - Instructors`,
-                permissions: [],
+                permissions: [{
+                    resourceRegex: `^(${wkids.wellknown.certAttempt}.*)$`,
+                    actionRegex: 'observe'
+                }],
                 extends: [eventPermGroupReqD.id]
             }, {
                 name: `${params.input.name} - Students`,
-                permissions: [],
+                permissions: [{
+                    resourceRegex: `^(${wkids.wellknown.certAttempt}.*)$`, // todo register new resource for group | user to view
+                    actionRegex: 'read'
+                }],
                 extends: [eventPermGroupReqD.id]
             }]
             const groupIDs: string[] = [eventPermGroupReqD.id]
@@ -233,7 +242,6 @@ const resolvers: gql.Resolvers<RequestContext> = {
             }
 
             const group = await ctx.svc.instance().readEventGroup(params.group_id)
-            const event = await ctx.svc.instance().readEvent(group.db.event.ref)
 
             group.db.attendees.push({
                 attendee: {
@@ -242,24 +250,14 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 role: params.input.role,
             })
 
-            // this sucks
-            let permG: string | undefined = undefined
-            if (params.input.role === 'student') {
-                permG = event.db.perm_groups[2]!.ref
-            } else if (params.input.role === 'instructor') {
-                permG = event.db.perm_groups[1]!.ref
-            } else if (params.input.role === 'head-instructor') {
-                permG = event.db.perm_groups[0]!.ref
-            } else {
-                throw new Error('unknown role')
-            }
-
             const addUserToPermGroupReq: bus.AddUserToGroup_Request = {
                 userId: params.input.user_id,
-                groupId: permG,
+                groupId: params.input.perm_group_id,
             }
             await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
                 bus.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
+
+            await ctx.svc.instance().db.eventGroups.replaceOne({'_id': group.db._id}, group.db)
 
             return {
                 attendee: {
