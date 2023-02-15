@@ -26,7 +26,7 @@ type Event @key(fields: "id") {
   ends_at: String!
 
   groups: [EventGroup!]!
-  perm_group: Group!
+  perm_groups: [Group!]!
 }
 
 extend type Query {

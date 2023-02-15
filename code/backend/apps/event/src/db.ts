@@ -13,7 +13,7 @@ export interface Event extends db.WithID<string> {
     starts_at: string
     ends_at: string
 
-    perm_group: db.ForeignKey<string>
+    perm_groups: db.ForeignKey<string>[]
 }
 
 export interface EventGroup extends db.WithID<string> {

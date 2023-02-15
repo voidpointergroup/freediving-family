@@ -122,7 +122,7 @@ class ServiceContext {
     }
 
     private async createPermGroup(req: bus.AddPermissionGroup_Request): Promise<bus.AddPermissionGroup_Response> {
-        const id = new ids.ID(wkids.wellknown.user)
+        const id = new ids.ID(wkids.wellknown.group)
         const now = new Date().toISOString()
         const grp: db.Group = {
             _id: id.toString(),

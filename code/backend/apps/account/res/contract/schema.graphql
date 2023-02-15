@@ -12,6 +12,10 @@ type User @key(fields: "id") {
   groups: GroupCollection!
 }
 
+type GroupPermission {
+  actionRegex: String!
+  resourceRegex: String!
+}
 type GroupCollection {
   edges: [GroupEdge!]!
 }
@@ -22,7 +26,7 @@ type GroupEdge {
 type Group @key(fields: "id") {
   id: String!
   name: String!
-  permissions: [String!]!
+  permissions: [GroupPermission!]!
   extends: GroupCollection!
 }
 
@@ -38,9 +42,13 @@ input UpdateUserInput {
   groups: [String!]
 }
 
+input GroupPermissionInput {
+  actionRegex: String!
+  resourceRegex: String!
+}
 input UpdateGroupInput {
-  extends: [String!]
-  permissions: [String!]
+  extends: [String!]!
+  permissions: [GroupPermissionInput!]!
 }
 
 type UserMutation {

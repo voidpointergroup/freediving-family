@@ -78,7 +78,12 @@ class ServiceContext {
                 return {
                     id: group._id,
                     name: group.name,
-                    permissions: group.permissions.map(x => `${x.action}+${x.resource}`),
+                    permissions: group.permissions.map(x => {
+                        return {
+                            actionRegex: x.action,
+                            resourceRegex: x.resource
+                        }
+                    }),
                 }
             }
         }
@@ -173,13 +178,9 @@ const resolvers: gql.Resolvers<RequestContext> = {
             }
             if (params.input.permissions) {
                 item.permissions = params.input.permissions.map(x => {
-                    const items = x.split('+')
-                    if (items.length !== 2) {
-                        throw new Error('invalid resource')
-                    }
                     return {
-                        action: items[0]!,
-                        resource: items[1]!
+                        action: x.actionRegex,
+                        resource: x.resourceRegex
                     }
                 })
             }

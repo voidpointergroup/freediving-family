@@ -56,9 +56,11 @@ class ServiceContext {
             starts_at: item.starts_at,
             ends_at: item.ends_at,
 
-            perm_group: {
-                id: item.perm_group.ref,
-            },
+            perm_groups: item.perm_groups.map(x => {
+                return {
+                    id: x.ref
+                }
+            })
         }
     }
 
@@ -148,7 +150,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             await ctx.svc.instance().access('create', new ids.ID(wkids.wellknown.event, wkids.unknown).toString())
             const id = new ids.ID(wkids.wellknown.event)
 
-            const permGroupReq: bus.AddPermissionGroup_Request = {
+            const eventPermGroupReq: bus.AddPermissionGroup_Request = {
                 name: params.input.name,
                 permissions: [{
                     actionRegex: 'read',
@@ -156,18 +158,33 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 }],
                 extends: []
             }
-            const resp = await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`,
-                bus.AddPermissionGroup_Request.encode(permGroupReq).finish())
-            const respD = bus.AddPermissionGroup_Response.decode(resp.data)
+            const eventPermGroupResp = await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`,
+                bus.AddPermissionGroup_Request.encode(eventPermGroupReq).finish())
+            const eventPermGroupReqD = bus.AddPermissionGroup_Response.decode(eventPermGroupResp.data)
+
+            const reqs: bus.AddPermissionGroup_Request[] = [{
+                name: `${params.input.name} - Head Instructors`,
+                permissions: [],
+                extends: [eventPermGroupReqD.id]
+            }]
+            const groupIDs: string[] = [eventPermGroupReqD.id]
+            for (const req of reqs) {
+                const resp = await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`,
+                    bus.AddPermissionGroup_Request.encode(req).finish())
+                const respD = bus.AddPermissionGroup_Response.decode(resp.data)
+                groupIDs.push(respD.id)
+            }
 
             const item: db.Event = {
                 _id: id.toString(),
                 name: params.input.name,
                 starts_at: params.input.starts_at,
                 ends_at: params.input.ends_at,
-                perm_group: {
-                    ref: respD.id
-                }
+                perm_groups: groupIDs.map(x => {
+                    return {
+                        ref: x
+                    }
+                })
             }
             await ctx.svc.instance().db.events.insertOne(item)
 
