@@ -158,7 +158,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             const id = new ids.ID(wkids.wellknown.event)
 
             const eventPermGroupReq: bus.AddPermissionGroup_Request = {
-                name: params.input.name,
+                name: `${params.input.name} - Root`,
                 permissions: [{
                     actionRegex: 'read',
                     resourceRegex: `^(${id.toString()}.*)$`
@@ -250,12 +250,14 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 role: params.input.role,
             })
 
-            const addUserToPermGroupReq: bus.AddUserToGroup_Request = {
-                userId: params.input.user_id,
-                groupId: params.input.perm_group_id,
+            for (const pid of params.input.perm_group_ids) {
+                const addUserToPermGroupReq: bus.AddUserToGroup_Request = {
+                    userId: params.input.user_id,
+                    groupId: pid,
+                }
+                await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
+                    bus.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
             }
-            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
-                bus.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
 
             await ctx.svc.instance().db.eventGroups.replaceOne({'_id': group.db._id}, group.db)
 
