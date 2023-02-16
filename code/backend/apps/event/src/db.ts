@@ -4,7 +4,7 @@ export const DATABASE = {
     db: 'event',
     collections: {
         events: 'events',
-        eventGroups: 'eventGroups'
+        eventGroups: 'event_groups'
     }
 }
 

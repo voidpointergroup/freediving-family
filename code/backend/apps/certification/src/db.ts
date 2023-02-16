@@ -6,7 +6,7 @@ export const DATABASE = {
         certs: 'certs',
         certAttempts: 'cert_attempts',
         certTemplates: 'cert_templates',
-        requirementAttempt: 'requirement_attempt'
+        requirementAttempt: 'requirements'
     }
 }
 
