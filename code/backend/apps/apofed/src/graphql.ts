@@ -2,12 +2,13 @@ import { ApolloServer } from 'apollo-server'
 import { GraphQLError } from "graphql"
 import { ApolloGateway, IntrospectAndCompose, GraphQLDataSourceProcessOptions, RemoteGraphQLDataSource } from '@apollo/gateway'
 import { GraphQLDataSourceRequestKind } from '@apollo/gateway/dist/datasources/types'
-import * as bus from './__generated__/proto/bus/ts/bus/bus'
+import * as bus from '../../../libs/bus/ts/__generated__/proto/bus/bus'
 import * as bus_topics from '../../../libs/bus/topics.json'
 import * as base64 from 'js-base64'
 import * as nats from 'nats'
 import * as yaml from 'yaml'
-import * as netctx from '../../../libs/netctx/src/index'
+import * as ulid from 'ulid'
+import * as netctx from '../../../libs/shared/src/gateway'
 
 process.on('SIGINT', function () {
     process.exit()
@@ -63,6 +64,7 @@ class CustomDataSource extends RemoteGraphQLDataSource {
                 const verJwt = await svc.verify(token)
 
                 const context: netctx.GatewayRequestContext = {
+                    id: ulid.ulid().toString().toLowerCase(),
                     user: {
                         id: verJwt.id
                     }

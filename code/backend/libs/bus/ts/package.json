@@ -1,0 +1,8 @@
+{
+    "scripts": {
+        "codegen": "rm -rf ./__generated__/proto/bus && mkdir -p ./__generated__/proto/bus && protoc -I ../ --plugin ./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out ./__generated__/proto/bus ../*.proto"
+    },
+    "devDependencies": {
+        "ts-proto": "^1.139.0"
+    }
+}

@@ -1,7 +1,11 @@
 #!/bin/bash
 
-variable=ids,db,netctx
-for i in ${variable//,/ }
+cd bus
+bash generate.sh
+cd ../
+
+libsF=shared
+for i in ${libsF//,/ }
 do
     cd $i
     npm i

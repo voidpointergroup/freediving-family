@@ -1,5 +1,5 @@
 import {describe, expect, test} from '@jest/globals'
-import { ID } from '../../src'
+import { ID } from '../../src/id'
 
 describe('IDs', () => {
     test('Creating new ID', async () => {

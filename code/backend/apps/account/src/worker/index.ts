@@ -1,10 +1,10 @@
 import * as mongo from 'mongodb'
 import * as db from '../db'
-import * as bus from '../__generated__/proto/bus/ts/bus/bus'
+import * as bus from '../../../../libs/bus/ts/__generated__/proto/bus/bus'
 import * as bus_topics from '../../../../libs/bus/topics.json'
 import * as nats from 'nats'
 import * as yaml from 'yaml'
-import * as ids from '../../../../libs/ids/src/index'
+import * as ids from '../../../../libs/shared/src/id'
 import * as wkids from '../../../../libs/ids.json'
 
 process.on('SIGINT', function() {

@@ -25,6 +25,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
+    "nats": "^2.12.0",
     "ulid": "^2.3.0"
   }
 }

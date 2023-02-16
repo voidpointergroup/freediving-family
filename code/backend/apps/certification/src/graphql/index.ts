@@ -11,12 +11,13 @@ import * as yaml from 'yaml'
 import * as error from '../error'
 import * as nats from 'nats'
 import * as ut from 'utility-types'
-import * as netctx from '../../../../libs/netctx/src/index'
-import { Lazy } from '../../../../libs/netctx/src/lazy'
-import * as bus from '../__generated__/proto/bus/ts/bus/bus'
+import * as netctx from '../../../../libs/shared/src/gateway'
+import { Lazy } from '../../../../libs/shared/src/lazy'
+import * as bus from '../../../../libs/bus/ts/__generated__/proto/bus/bus'
 import * as bus_topics from '../../../../libs/bus/topics.json'
-import * as ids from '../../../../libs/ids/src/index'
+import * as ids from '../../../../libs/shared/src/id'
 import * as wkids from '../../../../libs/ids.json'
+import * as bushelper from '../../../../libs/shared/src/bus'
 
 process.on('SIGINT', function() {
     process.exit()
@@ -35,20 +36,9 @@ interface ServiceDB {
 }
 
 class ServiceContext {
+    public authHelper: bushelper.Auth
     constructor(public db: ServiceDB, public nc: nats.NatsConnection, public gwctx: netctx.GatewayRequestContext) {
-    }
-
-    public async access(action: string, resource: string): Promise<void> {
-        const req = bus.Authorize_Request.encode({
-            userId: this.gwctx.user.id,
-            action: action,
-            resourceId: resource
-        }).finish()
-        const response = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`, req)
-        const responseT = bus.Authorize_Response.decode(response.data)
-        if (!responseT.permitted) {
-            throw new Error(responseT.reason)
-        }
+        this.authHelper = new bushelper.Auth(nc)
     }
 
     private makeCert(item: db.Certificate): ut.DeepPartial<gql.Cert> {
@@ -75,7 +65,7 @@ class ServiceContext {
     }
 
     public async readCert(id: string): Promise<{db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert>}> {
-        await this.access('read', id)
+        await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
         const item = await this.db.certs.findOne({'_id': id})
         if (!item) {
@@ -90,7 +80,7 @@ class ServiceContext {
     }
 
     public async readCertAttempt(id: string): Promise<{db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt>}> {
-        await this.access('read', id)
+        await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
         const item = await this.db.certAttempts.findOne({'_id': id})
         if (!item) {
@@ -105,7 +95,7 @@ class ServiceContext {
     }
 
     public async readCertTemplate(id: string): Promise<{db: db.CertificateTemplate, graphql: () => ut.DeepPartial<gql.CertTemplate>}> {
-        await this.access('read', id)
+        await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
         const item = await this.db.certTemplates.findOne({'_id': id})
         if (!item) {
@@ -128,7 +118,7 @@ class ServiceContext {
     }
 
     public async readRequirement(id: string): Promise<{db: db.Requirement, graphql: () => ut.DeepPartial<gql.Requirement>}> {
-        await this.access('read', id)
+        await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
         const item = await this.db.requirements.findOne({'_id': id})
         if (!item) {
@@ -155,6 +145,9 @@ class ServiceContext {
         const certsRes: {db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert>}[] = []
         while (await certs.hasNext()) {
             const c = (await certs.next())!
+            if (!(await this.authHelper.mayAccess(this.gwctx.user.id, 'read', c._id)).permitted) {
+                continue
+            }
             certsRes.push({
                 db: c,
                 graphql: () => {
@@ -171,6 +164,9 @@ class ServiceContext {
         const certsRes: {db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt>}[] = []
         while (await certs.hasNext()) {
             const c = (await certs.next())!
+            if (!(await this.authHelper.mayAccess(this.gwctx.user.id, 'read', c._id)).permitted) {
+                continue
+            }
             certsRes.push({
                 db: c,
                 graphql: () => {
@@ -211,11 +207,11 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     User: {
         certs: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.Cert[]>> => {
-            await ctx.svc.instance().access('read', partial.id!)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
             return (await ctx.svc.instance().findCertsForUser(partial.id!)).map(x => x.graphql())
         },
         cert_attempts: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.CertAttempt[]>> => {
-            await ctx.svc.instance().access('read', partial.id!)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
             return (await ctx.svc.instance().findCertAttemptsForUser(partial.id!)).map(x => x.graphql())
         },
     },
@@ -232,7 +228,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     RequirementMutation: {
         set_observed: async (_partial, params, ctx): Promise<boolean> => {
-            await ctx.svc.instance().access('observe', new ids.ID(wkids.wellknown.requirement, wkids.unknown).toString())
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'observe', params.id)
             const item = await ctx.svc.instance().readRequirement(params.id)
             item.db.observed = params.accomplished ? {
                 at: new Date().toISOString(),
@@ -244,7 +240,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return true
         },
         set_approved: async (_partial, params, ctx): Promise<boolean> => {
-            await ctx.svc.instance().access('approve', new ids.ID(wkids.wellknown.requirement, wkids.unknown).toString())
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'observe', params.id)
             const item = await ctx.svc.instance().readRequirement(params.id)
             item.db.approved = params.accomplished ? {
                 at: new Date().toISOString(),
@@ -258,7 +254,8 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     CertAttemptMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.CertAttempt>> => {
-            await ctx.svc.instance().access('create', new ids.ID(wkids.wellknown.certAttempt, wkids.unknown).toString())
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create',
+                new ids.ID(wkids.wellknown.certAttempt, wkids.unknown).toString())
 
             const cerattID = new ids.ID(wkids.wellknown.certAttempt)
             const template = await ctx.svc.instance().readCertTemplate(params.input.cert_template_id.toString())
@@ -308,7 +305,8 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     CertTemplateMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.CertTemplate>> => {
-            await ctx.svc.instance().access('create', new ids.ID(wkids.wellknown.certTemplate, wkids.unknown).toString())
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create',
+                new ids.ID(wkids.wellknown.certTemplate, wkids.unknown).toString())
 
             const id = new ids.ID(wkids.wellknown.certTemplate)
             const now = new Date().toISOString()
@@ -327,7 +325,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return (await ctx.svc.instance().readCertTemplate(id.toString())).graphql()
         },
         delete: async (_partial, params, ctx): Promise<boolean> => {
-            await ctx.svc.instance().access('delete', params.id!)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'delete', params.id!)
             await ctx.svc.instance().db.certTemplates.deleteOne({'_id': params.id!})
             return true
         },

@@ -11,10 +11,9 @@ import * as yaml from 'yaml'
 import * as error from '../error'
 import * as nats from 'nats'
 import * as ut from 'utility-types'
-import * as netctx from '../../../../libs/netctx/src/index'
-import { Lazy } from '../../../../libs/netctx/src/lazy'
-import * as bus from '../__generated__/proto/bus/ts/bus/bus'
-import * as bus_topics from '../../../../libs/bus/topics.json'
+import * as netctx from '../../../../libs/shared/src/gateway'
+import * as bushelper from '../../../../libs/shared/src/bus'
+import { Lazy } from '../../../../libs/shared/src/lazy'
 
 process.on('SIGINT', function() {
     process.exit()
@@ -31,24 +30,14 @@ interface ServiceDB {
 }
 
 class ServiceContext {
-    constructor(public db: ServiceDB, public nc: nats.NatsConnection, public gwctx: netctx.GatewayRequestContext) {
-    }
+    private _authHelper: bushelper.Auth
 
-    private async access(action: string, resource: string): Promise<void> {
-        const req = bus.Authorize_Request.encode({
-            userId: this.gwctx.user.id,
-            action: action,
-            resourceId: resource
-        }).finish()
-        const response = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`, req)
-        const responseT = bus.Authorize_Response.decode(response.data)
-        if (!responseT.permitted) {
-            throw new Error(responseT.reason)
-        }
+    constructor(public db: ServiceDB, public nc: nats.NatsConnection, public gwctx: netctx.GatewayRequestContext) {
+        this._authHelper = new bushelper.Auth(this.nc)
     }
 
     public async readUser(id: string): Promise<{db: db.User, graphql: () => ut.DeepPartial<gql.User>}> {
-        await this.access('read', id)
+        await this._authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
         const user = await this.db.users.findOne({'_id': id})
         if (!user) {
@@ -66,7 +55,7 @@ class ServiceContext {
     }
 
     public async readGroup(id: string): Promise<{db: db.Group, graphql: () => ut.DeepPartial<gql.Group>}> {
-        await this.access('read', id)
+        await this._authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
         const group = await this.db.groups.findOne({'_id': id})
         if (!group) {

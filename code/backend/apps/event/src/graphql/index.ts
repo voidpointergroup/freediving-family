@@ -11,12 +11,13 @@ import * as yaml from 'yaml'
 import * as error from '../error'
 import * as nats from 'nats'
 import * as ut from 'utility-types'
-import * as netctx from '../../../../libs/netctx/src/index'
-import { Lazy } from '../../../../libs/netctx/src/lazy'
-import * as bus from '../__generated__/proto/bus/ts/bus/bus'
+import * as netctx from '../../../../libs/shared/src/gateway'
+import { Lazy } from '../../../../libs/shared/src/lazy'
+import * as bus from '../../../../libs/bus/ts/__generated__/proto/bus/bus'
 import * as bus_topics from '../../../../libs/bus/topics.json'
 import * as ids from '../../../../libs/ids/src/index'
 import * as wkids from '../../../../libs/ids.json'
+import * as bushelper from '../../../../libs/shared/src/bus'
 
 process.on('SIGINT', function () {
     process.exit()
@@ -33,7 +34,10 @@ interface ServiceDB {
 }
 
 class ServiceContext {
+    public authHelper: bushelper.Auth
+
     constructor(public db: ServiceDB, public nc: nats.NatsConnection, public gwctx: netctx.GatewayRequestContext) {
+        this.authHelper = new bushelper.Auth(nc)
     }
 
     public async access(action: string, resource: string): Promise<boolean> {
@@ -77,9 +81,7 @@ class ServiceContext {
     }
 
     public async readEvent(id: string): Promise<{ db: db.Event, graphql: () => ut.DeepPartial<gql.Event> }> {
-        if (!await this.access('read', id)) {
-            throw new Error('insufficient permissions')
-        }
+        await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
         const item = await this.db.events.findOne({ '_id': id })
         if (!item) {
@@ -94,9 +96,7 @@ class ServiceContext {
     }
 
     public async readEventGroup(id: string): Promise<{ db: db.EventGroup, graphql: () => ut.DeepPartial<gql.EventGroup> }> {
-        if (!await this.access('read', id)) {
-            throw new Error('insufficient permissions')
-        }
+        await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
         const item = await this.db.eventGroups.findOne({ '_id': id })
         if (!item) {
@@ -115,7 +115,7 @@ class ServiceContext {
         const res: { db: db.EventGroup, graphql: () => ut.DeepPartial<gql.EventGroup> }[] = []
         while (await groups.hasNext()) {
             const g = (await groups.next())!
-            if (!await this.access('read', g._id)) {
+            if (!((await this.authHelper.mayAccess(this.gwctx.user.id, 'read', g._id)).permitted)) {
                 continue
             }
 
@@ -152,10 +152,8 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     EventMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Event>> => {
-            if (!await ctx.svc.instance().access('create', new ids.ID(wkids.wellknown.event, wkids.unknown).toString())) {
-                throw new Error('insufficient permissions')
-            }
-            const id = new ids.ID(wkids.wellknown.event)
+            const id = new ids.ID(wkids.wellknown.event, wkids.unknown)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', id.toString())
 
             const eventPermGroupReq: bus.AddPermissionGroup_Request = {
                 name: `${params.input.name} - Root`,
@@ -220,10 +218,9 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     EventGroupMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.EventGroup>> => {
-            if (!await ctx.svc.instance().access('create', new ids.ID(wkids.wellknown.eventGroup, wkids.unknown, ids.ID.parse(params.event_id)).toString())) {
-                throw new Error('insufficient permissions')
-            }
             const id = new ids.ID(wkids.wellknown.eventGroup, undefined, ids.ID.parse(params.event_id))
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', id.toString())
+
             const item: db.EventGroup = {
                 _id: id.toString(),
                 name: params.input.name,
@@ -237,10 +234,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return (await ctx.svc.instance().readEventGroup(id.toString())).graphql()
         },
         add_attendee: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.EventAttendee>> => {
-            if (!await ctx.svc.instance().access('update', ids.ID.parse(params.group_id).toString())) {
-                throw new Error('insufficient permissions')
-            }
-
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', params.group_id)
             const group = await ctx.svc.instance().readEventGroup(params.group_id)
 
             group.db.attendees.push({

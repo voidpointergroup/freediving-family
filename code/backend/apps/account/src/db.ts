@@ -1,4 +1,4 @@
-import * as db from  '../../../libs/db/src/index'
+import * as db from  '../../../libs/shared/src/db'
 
 export const DATABASE = {
     db: 'account',
