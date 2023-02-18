@@ -254,10 +254,9 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     CertAttemptMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.CertAttempt>> => {
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create',
-                new ids.ID(wkids.wellknown.certAttempt, wkids.unknown).toString())
-
             const cerattID = new ids.ID(wkids.wellknown.certAttempt)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', cerattID.toString())
+
             const template = await ctx.svc.instance().readCertTemplate(params.input.cert_template_id.toString())
             const now = new Date().toISOString()
 
@@ -305,10 +304,9 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     CertTemplateMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.CertTemplate>> => {
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create',
-                new ids.ID(wkids.wellknown.certTemplate, wkids.unknown).toString())
-
             const id = new ids.ID(wkids.wellknown.certTemplate)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', id.toString())
+
             const now = new Date().toISOString()
             const item: db.CertificateTemplate = {
                 _id: id.toString(),

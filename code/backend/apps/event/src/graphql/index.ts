@@ -152,7 +152,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     EventMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Event>> => {
-            const id = new ids.ID(wkids.wellknown.event, wkids.unknown)
+            const id = new ids.ID(wkids.wellknown.event)
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', id.toString())
 
             const eventPermGroupReq: buslive.AddPermissionGroup_Request = {
