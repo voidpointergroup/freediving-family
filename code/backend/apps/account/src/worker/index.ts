@@ -72,6 +72,12 @@ class ServiceContext {
                     const resp = await this.addUserToPermGroup(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(buslive.AddUserToGroup_Response.encode(resp).finish(), {})
+                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.remove_user_from_perm_group}`) {
+                    const req = buslive.RemoveUserFromGroup_Request.decode(msg.data)
+                    console.info(JSON.stringify(req))
+                    const resp = await this.removeUserFromPermGroup(req)
+                    console.info(JSON.stringify(resp))
+                    msg.respond(buslive.RemoveUserFromGroup_Response.encode(resp).finish(), {})
                 } else {
                     throw new Error(`unknown subject ${msg.subject}`)
                 }
@@ -160,18 +166,37 @@ class ServiceContext {
     }
 
     private async addUserToPermGroup(req: buslive.AddUserToGroup_Request): Promise<buslive.AddUserToGroup_Response> {
-        const group = await this.db.groups.findOne({ '_id': req.groupId })
         const user = await this.db.users.findOne({ '_id': req.userId })
-        if (!group) {
-            throw new Error('group not found')
-        }
         if (!user) {
             throw new Error('user not found')
         }
 
-        user.groups.push({
-            ref: group._id
+        const gids = new Set(user.groups.map(x => x.ref))
+        req.groupIds.forEach(x => gids.add(x))
+        user.groups = Array.from(gids.values()).map(x => {
+            return {
+                ref: x
+            }
         })
+
+        await this.db.users.replaceOne({ '_id': user._id }, user)
+        return {}
+    }
+
+    private async removeUserFromPermGroup(req: buslive.RemoveUserFromGroup_Request): Promise<buslive.RemoveUserFromGroup_Response> {
+        const user = await this.db.users.findOne({ '_id': req.userId })
+        if (!user) {
+            throw new Error('user not found')
+        }
+
+        const gids = new Set(user.groups.map(x => x.ref))
+        req.groupIds.forEach(x => gids.delete(x))
+        user.groups = Array.from(gids.values()).map(x => {
+            return {
+                ref: x
+            }
+        })
+
         await this.db.users.replaceOne({ '_id': user._id }, user)
         return {}
     }

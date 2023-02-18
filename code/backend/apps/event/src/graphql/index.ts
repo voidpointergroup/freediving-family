@@ -74,7 +74,7 @@ class ServiceContext {
                     attendee: {
                         id: x.attendee.ref
                     },
-                    role: x.role
+                    role: x.role.ref
                 }
             })
         }
@@ -231,24 +231,24 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return (await ctx.svc.instance().readEventGroup(id.toString())).graphql()
         },
         add_attendee: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.EventAttendee>> => {
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', params.group_id)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'update', params.group_id)
             const group = await ctx.svc.instance().readEventGroup(params.group_id)
 
             group.db.attendees.push({
                 attendee: {
                     ref: params.input.user_id
                 },
-                role: params.input.role,
+                role: {
+                    ref: params.input.role
+                },
             })
 
-            for (const pid of params.input.perm_group_ids) {
-                const addUserToPermGroupReq: buslive.AddUserToGroup_Request = {
-                    userId: params.input.user_id,
-                    groupId: pid,
-                }
-                await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
-                    buslive.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
+            const addUserToPermGroupReq: buslive.AddUserToGroup_Request = {
+                userId: params.input.user_id,
+                groupIds: [params.input.role],
             }
+            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
+                buslive.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
 
             await ctx.svc.instance().db.eventGroups.replaceOne({ '_id': group.db._id }, group.db)
 
@@ -259,6 +259,28 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 role: params.input.role
             }
         },
+        remove_attendee: async (_partial, params, ctx): Promise<boolean> => {
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'update', params.group_id)
+            const group = await ctx.svc.instance().readEventGroup(params.group_id)
+
+            const matchingAttendees = group.db.attendees.filter(x => x.attendee.ref === params.user_id)
+            if (matchingAttendees.length === 0) {
+                return false
+            }
+
+            group.db.attendees = group.db.attendees.filter(x => {
+                return x.attendee.ref !== params.user_id
+            })
+
+            const removeUserFromPermGroupReq: buslive.AddUserToGroup_Request = {
+                userId: params.user_id,
+                groupIds: matchingAttendees.map(x => x.role.ref),
+            }
+            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.remove_user_from_perm_group}`,
+                buslive.RemoveUserFromGroup_Request.encode(removeUserFromPermGroupReq).finish())
+
+            return true
+        }
     }
 }
 

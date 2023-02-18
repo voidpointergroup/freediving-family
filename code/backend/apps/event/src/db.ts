@@ -21,6 +21,6 @@ export interface EventGroup extends db.WithID<string> {
     event: db.ForeignKey<string>
     attendees: {
         attendee: db.ForeignKey<string>,
-        role: string
+        role: db.ForeignKey<string>
     }[]
 }
