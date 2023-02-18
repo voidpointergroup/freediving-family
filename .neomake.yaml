@@ -87,12 +87,9 @@ chains:
       - *services
     tasks:
       - script: |
-          printf $REG_PASS | docker login -u $REG_USER --password-stdin $REG_BASE
-
           cd code/backend/apps/$APP
           export IMAGE_NAME=$REG_BASE/$REG_PROJ/$APP-$FLAVOR:{{ version }}
           docker build --platform=linux/amd64 -f docker/Dockerfile --build-arg=app=$APP --build-arg=flavor=$FLAVOR -t $IMAGE_NAME ../../
-          # docker push $IMAGE_NAME
 
   helm:
     workdir: ./deploy/helm
