@@ -65,3 +65,46 @@ chains:
       - script: |
           cd libs/shared
           npm i
+
+  image:
+    pre:
+      - prepare
+    tasks:
+      - script: |
+          printf $REG_PASS | docker login -u $REG_USER --password-stdin $REG_BASE
+
+          cd code/backend/apps/{{ app }}
+          export IMAGE_NAME=$REG_BASE/$REG_PROJ/{{ app }}-{{ flavor }}:{{ version }}
+          docker build -f docker/Dockerfile --build-arg=app={{ app }} --build-arg=flavor={{ flavor }} -t $IMAGE_NAME ../../
+          docker push $IMAGE_NAME
+
+  images:
+    pre:
+      - prepare
+    matrix:
+      - *services
+    tasks:
+      - script: |
+          printf $REG_PASS | docker login -u $REG_USER --password-stdin $REG_BASE
+
+          cd code/backend/apps/$APP
+          export IMAGE_NAME=$REG_BASE/$REG_PROJ/$APP-$FLAVOR:{{ version }}
+          docker build --platform=linux/amd64 -f docker/Dockerfile --build-arg=app=$APP --build-arg=flavor=$FLAVOR -t $IMAGE_NAME ../../
+          # docker push $IMAGE_NAME
+
+  helm:
+    workdir: ./deploy/helm
+    tasks:
+      - script: |
+          complate -e render -t chart -v chart={{ chart }} -v version={{ version }} > ./Chart.yaml
+          complate -e render -t values -v meta.tag={{ version }} > ./values.yaml
+          helm dependency build
+          helm package .
+          mv ./{{ chart }}-{{ version }}.tgz ./chart.tgz
+          curl -lLk -X POST -H 'Content-Type: multipart/form-data' -F 'chart=@./chart.tgz;type=application/x-compressed-tar' -H 'accept: application/json' -u $REG_USER:$REG_PASS https://$REG_BASE/api/chartrepo/$REG_PROJ/charts
+
+  deploy:
+    pre:
+      - images
+      - helm
+    tasks: []
