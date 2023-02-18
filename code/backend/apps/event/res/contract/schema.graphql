@@ -30,7 +30,7 @@ type Event @key(fields: "id") {
   perm_groups: [Group!]!
 }
 
-type QueryEventsParams {
+input QueryEventsParams {
   archived: Boolean
 }
 
