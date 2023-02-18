@@ -1,5 +1,5 @@
 syntax = "proto3";
-package bus;
+package live;
 
 message JwtVerification {
   message Request {

@@ -1,6 +1,6 @@
 import * as nats from 'nats'
-import * as bus from '../../bus2/ts/__generated__/proto/bus/bus'
-import * as bus_topics from '../../bus2/topics.json'
+import * as bus from '../../bus/ts/__generated__/proto/bus/live'
+import * as bus_topics from '../../bus/topics.json'
 
 export class Auth {
     constructor(private nats: nats.NatsConnection) {

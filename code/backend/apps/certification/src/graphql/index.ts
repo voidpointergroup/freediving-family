@@ -13,13 +13,13 @@ import * as nats from 'nats'
 import * as ut from 'utility-types'
 import * as netctx from '../../../../libs/shared/src/gateway'
 import { Lazy } from '../../../../libs/shared/src/lazy'
-import * as bus from '../../../../libs/bus/ts/__generated__/proto/bus/bus'
+import * as buslive from '../../../../libs/bus/ts/__generated__/proto/bus/live'
 import * as bus_topics from '../../../../libs/bus/topics.json'
 import * as ids from '../../../../libs/shared/src/id'
 import * as wkids from '../../../../libs/ids.json'
 import * as bushelper from '../../../../libs/shared/src/bus'
 
-process.on('SIGINT', function() {
+process.on('SIGINT', function () {
     process.exit()
 })
 
@@ -64,10 +64,10 @@ class ServiceContext {
         }
     }
 
-    public async readCert(id: string): Promise<{db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert>}> {
+    public async readCert(id: string): Promise<{ db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
-        const item = await this.db.certs.findOne({'_id': id})
+        const item = await this.db.certs.findOne({ '_id': id })
         if (!item) {
             throw new Error(error.NotFound(id))
         }
@@ -79,10 +79,10 @@ class ServiceContext {
         }
     }
 
-    public async readCertAttempt(id: string): Promise<{db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt>}> {
+    public async readCertAttempt(id: string): Promise<{ db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
-        const item = await this.db.certAttempts.findOne({'_id': id})
+        const item = await this.db.certAttempts.findOne({ '_id': id })
         if (!item) {
             throw new Error(error.NotFound(id))
         }
@@ -94,10 +94,10 @@ class ServiceContext {
         }
     }
 
-    public async readCertTemplate(id: string): Promise<{db: db.CertificateTemplate, graphql: () => ut.DeepPartial<gql.CertTemplate>}> {
+    public async readCertTemplate(id: string): Promise<{ db: db.CertificateTemplate, graphql: () => ut.DeepPartial<gql.CertTemplate> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
-        const item = await this.db.certTemplates.findOne({'_id': id})
+        const item = await this.db.certTemplates.findOne({ '_id': id })
         if (!item) {
             throw new Error(error.NotFound(id))
         }
@@ -117,10 +117,10 @@ class ServiceContext {
         }
     }
 
-    public async readRequirement(id: string): Promise<{db: db.Requirement, graphql: () => ut.DeepPartial<gql.Requirement>}> {
+    public async readRequirement(id: string): Promise<{ db: db.Requirement, graphql: () => ut.DeepPartial<gql.Requirement> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
-        const item = await this.db.requirements.findOne({'_id': id})
+        const item = await this.db.requirements.findOne({ '_id': id })
         if (!item) {
             throw new Error(error.NotFound(id))
         }
@@ -139,10 +139,10 @@ class ServiceContext {
         }
     }
 
-    public async findCertsForUser(user_id: string): Promise<{db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert>}[]> {
-        const certs = this.db.certs.find({'student.ref': user_id})
+    public async findCertsForUser(user_id: string): Promise<{ db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert> }[]> {
+        const certs = this.db.certs.find({ 'student.ref': user_id })
 
-        const certsRes: {db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert>}[] = []
+        const certsRes: { db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert> }[] = []
         while (await certs.hasNext()) {
             const c = (await certs.next())!
             if (!(await this.authHelper.mayAccess(this.gwctx.user.id, 'read', c._id)).permitted) {
@@ -158,10 +158,10 @@ class ServiceContext {
         return certsRes
     }
 
-    public async findCertAttemptsForUser(user_id: string): Promise<{db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt>}[]> {
-        const certs = this.db.certAttempts.find({'student.ref': user_id})
+    public async findCertAttemptsForUser(user_id: string): Promise<{ db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt> }[]> {
+        const certs = this.db.certAttempts.find({ 'student.ref': user_id })
 
-        const certsRes: {db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt>}[] = []
+        const certsRes: { db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt> }[] = []
         while (await certs.hasNext()) {
             const c = (await certs.next())!
             if (!(await this.authHelper.mayAccess(this.gwctx.user.id, 'read', c._id)).permitted) {
@@ -236,7 +236,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                     ref: ctx.svc.instance().gwctx.user.id
                 }
             } : undefined
-            await ctx.svc.instance().db.requirements.replaceOne({'_id': item.db._id}, item.db)
+            await ctx.svc.instance().db.requirements.replaceOne({ '_id': item.db._id }, item.db)
             return true
         },
         set_approved: async (_partial, params, ctx): Promise<boolean> => {
@@ -248,7 +248,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                     ref: ctx.svc.instance().gwctx.user.id
                 }
             } : undefined
-            await ctx.svc.instance().db.requirements.replaceOne({'_id': item.db._id}, item.db)
+            await ctx.svc.instance().db.requirements.replaceOne({ '_id': item.db._id }, item.db)
             return true
         },
     },
@@ -292,13 +292,13 @@ const resolvers: gql.Resolvers<RequestContext> = {
             await ctx.svc.instance().db.certAttempts.insertOne(item)
 
             // allow user to read their own certattempt
-            const permReq: bus.GivePermission_Request = {
+            const permReq: buslive.GivePermission_Request = {
                 userId: item.student.ref,
                 actionRegex: 'read',
                 resourceRegex: `^(${item._id})$`
             }
             await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.give_permission}`,
-                bus.GivePermission_Request.encode(permReq).finish())
+                buslive.GivePermission_Request.encode(permReq).finish())
 
             return (await ctx.svc.instance().readCertAttempt(cerattID.toString())).graphql()
         },
@@ -326,7 +326,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
         delete: async (_partial, params, ctx): Promise<boolean> => {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'delete', params.id!)
-            await ctx.svc.instance().db.certTemplates.deleteOne({'_id': params.id!})
+            await ctx.svc.instance().db.certTemplates.deleteOne({ '_id': params.id! })
             return true
         },
     }

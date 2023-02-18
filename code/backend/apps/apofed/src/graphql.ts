@@ -2,7 +2,7 @@ import { ApolloServer } from 'apollo-server'
 import { GraphQLError } from "graphql"
 import { ApolloGateway, IntrospectAndCompose, GraphQLDataSourceProcessOptions, RemoteGraphQLDataSource } from '@apollo/gateway'
 import { GraphQLDataSourceRequestKind } from '@apollo/gateway/dist/datasources/types'
-import * as bus from '../../../libs/bus/ts/__generated__/proto/bus/bus'
+import * as buslive from '../../../libs/bus/ts/__generated__/proto/bus/live'
 import * as bus_topics from '../../../libs/bus/topics.json'
 import * as base64 from 'js-base64'
 import * as nats from 'nats'
@@ -30,13 +30,13 @@ const config = {
 class Service {
     constructor(private nc: nats.NatsConnection) { }
 
-    public async verify(jwt: string): Promise<bus.JwtVerification_Response_Details> {
-        const resp = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`, bus.JwtVerification_Request.encode({
+    public async verify(jwt: string): Promise<buslive.JwtVerification_Response_Details> {
+        const resp = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`, buslive.JwtVerification_Request.encode({
             jwt,
         }).finish(), {
             timeout: 2000,
         })
-        const respD = bus.JwtVerification_Response.decode(resp.data)
+        const respD = buslive.JwtVerification_Response.decode(resp.data)
         if (!respD.ok || !respD.details) {
             throw new Error('jwt could not be verified')
         }

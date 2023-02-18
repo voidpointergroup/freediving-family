@@ -13,9 +13,9 @@ import * as nats from 'nats'
 import * as ut from 'utility-types'
 import * as netctx from '../../../../libs/shared/src/gateway'
 import { Lazy } from '../../../../libs/shared/src/lazy'
-import * as bus from '../../../../libs/bus2/ts/__generated__/proto/bus/bus'
-import * as bus_topics from '../../../../libs/bus2/topics.json'
-import * as ids from '../../../../libs/ids/src/index'
+import * as buslive from '../../../../libs/bus/ts/__generated__/proto/bus/live'
+import * as bus_topics from '../../../../libs/bus/topics.json'
+import * as ids from '../../../../libs/shared/src/id'
 import * as wkids from '../../../../libs/ids.json'
 import * as bushelper from '../../../../libs/shared/src/bus'
 
@@ -41,13 +41,13 @@ class ServiceContext {
     }
 
     public async access(action: string, resource: string): Promise<boolean> {
-        const req = bus.Authorize_Request.encode({
+        const req = buslive.Authorize_Request.encode({
             userId: this.gwctx.user.id,
             action: action,
             resourceId: resource
         }).finish()
         const response = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`, req)
-        return bus.Authorize_Response.decode(response.data).permitted
+        return buslive.Authorize_Response.decode(response.data).permitted
     }
 
     private makeEvent(item: db.Event): ut.DeepPartial<gql.Event> {
@@ -111,7 +111,7 @@ class ServiceContext {
     }
 
     public async findEventGroupsForEvent(eventID: string): Promise<{ db: db.EventGroup, graphql: () => ut.DeepPartial<gql.EventGroup> }[]> {
-        const groups = this.db.eventGroups.find({'event.ref': eventID})
+        const groups = this.db.eventGroups.find({ 'event.ref': eventID })
         const res: { db: db.EventGroup, graphql: () => ut.DeepPartial<gql.EventGroup> }[] = []
         while (await groups.hasNext()) {
             const g = (await groups.next())!
@@ -155,7 +155,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             const id = new ids.ID(wkids.wellknown.event, wkids.unknown)
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', id.toString())
 
-            const eventPermGroupReq: bus.AddPermissionGroup_Request = {
+            const eventPermGroupReq: buslive.AddPermissionGroup_Request = {
                 name: `${params.input.name} - Root`,
                 permissions: [{
                     actionRegex: 'read',
@@ -164,10 +164,10 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 extends: []
             }
             const eventPermGroupResp = await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`,
-                bus.AddPermissionGroup_Request.encode(eventPermGroupReq).finish())
-            const eventPermGroupReqD = bus.AddPermissionGroup_Response.decode(eventPermGroupResp.data)
+                buslive.AddPermissionGroup_Request.encode(eventPermGroupReq).finish())
+            const eventPermGroupReqD = buslive.AddPermissionGroup_Response.decode(eventPermGroupResp.data)
 
-            const reqs: bus.AddPermissionGroup_Request[] = [{
+            const reqs: buslive.AddPermissionGroup_Request[] = [{
                 name: `${params.input.name} - Head Instructors`,
                 permissions: [{
                     resourceRegex: `^(${wkids.wellknown.certAttempt}.*)$`,
@@ -192,8 +192,8 @@ const resolvers: gql.Resolvers<RequestContext> = {
             const groupIDs: string[] = [eventPermGroupReqD.id]
             for (const req of reqs) {
                 const resp = await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`,
-                    bus.AddPermissionGroup_Request.encode(req).finish())
-                const respD = bus.AddPermissionGroup_Response.decode(resp.data)
+                    buslive.AddPermissionGroup_Request.encode(req).finish())
+                const respD = buslive.AddPermissionGroup_Response.decode(resp.data)
                 groupIDs.push(respD.id)
             }
 
@@ -245,15 +245,15 @@ const resolvers: gql.Resolvers<RequestContext> = {
             })
 
             for (const pid of params.input.perm_group_ids) {
-                const addUserToPermGroupReq: bus.AddUserToGroup_Request = {
+                const addUserToPermGroupReq: buslive.AddUserToGroup_Request = {
                     userId: params.input.user_id,
                     groupId: pid,
                 }
                 await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
-                    bus.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
+                    buslive.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
             }
 
-            await ctx.svc.instance().db.eventGroups.replaceOne({'_id': group.db._id}, group.db)
+            await ctx.svc.instance().db.eventGroups.replaceOne({ '_id': group.db._id }, group.db)
 
             return {
                 attendee: {

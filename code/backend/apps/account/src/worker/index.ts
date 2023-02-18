@@ -1,13 +1,13 @@
 import * as mongo from 'mongodb'
 import * as db from '../db'
-import * as bus from '../../../../libs/bus/ts/__generated__/proto/bus/bus'
+import * as buslive from '../../../../libs/bus/ts/__generated__/proto/bus/live'
 import * as bus_topics from '../../../../libs/bus/topics.json'
 import * as nats from 'nats'
 import * as yaml from 'yaml'
 import * as ids from '../../../../libs/shared/src/id'
 import * as wkids from '../../../../libs/ids.json'
 
-process.on('SIGINT', function() {
+process.on('SIGINT', function () {
     process.exit()
 })
 
@@ -43,35 +43,35 @@ class ServiceContext {
             try {
                 console.info(`processing message on ${msg.subject}`)
                 if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`) {
-                    const req = bus.JwtVerification_Request.decode(msg.data)
+                    const req = buslive.JwtVerification_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.verify(req)
                     console.info(JSON.stringify(resp))
-                    msg.respond(bus.JwtVerification_Response.encode(resp).finish(), {})
+                    msg.respond(buslive.JwtVerification_Response.encode(resp).finish(), {})
                 } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`) {
-                    const req = bus.Authorize_Request.decode(msg.data)
+                    const req = buslive.Authorize_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.authorize(req)
                     console.info(JSON.stringify(resp))
-                    msg.respond(bus.Authorize_Response.encode(resp).finish(), {})
+                    msg.respond(buslive.Authorize_Response.encode(resp).finish(), {})
                 } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.give_permission}`) {
-                    const req = bus.GivePermission_Request.decode(msg.data)
+                    const req = buslive.GivePermission_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.givePermission(req)
                     console.info(JSON.stringify(resp))
-                    msg.respond(bus.GivePermission_Response.encode(resp).finish(), {})
+                    msg.respond(buslive.GivePermission_Response.encode(resp).finish(), {})
                 } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`) {
-                    const req = bus.AddPermissionGroup_Request.decode(msg.data)
+                    const req = buslive.AddPermissionGroup_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.createPermGroup(req)
                     console.info(JSON.stringify(resp))
-                    msg.respond(bus.AddPermissionGroup_Response.encode(resp).finish(), {})
+                    msg.respond(buslive.AddPermissionGroup_Response.encode(resp).finish(), {})
                 } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`) {
-                    const req = bus.AddUserToGroup_Request.decode(msg.data)
+                    const req = buslive.AddUserToGroup_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.addUserToPermGroup(req)
                     console.info(JSON.stringify(resp))
-                    msg.respond(bus.AddUserToGroup_Response.encode(resp).finish(), {})
+                    msg.respond(buslive.AddUserToGroup_Response.encode(resp).finish(), {})
                 } else {
                     throw new Error(`unknown subject ${msg.subject}`)
                 }
@@ -95,7 +95,7 @@ class ServiceContext {
         await Promise.any(allWorkers)
     }
 
-    private async verify(req: bus.JwtVerification_Request): Promise<bus.JwtVerification_Response> {
+    private async verify(req: buslive.JwtVerification_Request): Promise<buslive.JwtVerification_Response> {
         return {
             ok: true,
             details: {
@@ -104,8 +104,8 @@ class ServiceContext {
         }
     }
 
-    private async authorize(req: bus.Authorize_Request): Promise<bus.Authorize_Response> {
-        const user = await this.db.users.findOne({'_id': req.userId})
+    private async authorize(req: buslive.Authorize_Request): Promise<buslive.Authorize_Response> {
+        const user = await this.db.users.findOne({ '_id': req.userId })
         if (!user) {
             return {
                 permitted: false,
@@ -133,7 +133,7 @@ class ServiceContext {
         }
     }
 
-    private async createPermGroup(req: bus.AddPermissionGroup_Request): Promise<bus.AddPermissionGroup_Response> {
+    private async createPermGroup(req: buslive.AddPermissionGroup_Request): Promise<buslive.AddPermissionGroup_Response> {
         const id = new ids.ID(wkids.wellknown.group)
         const now = new Date().toISOString()
         const grp: db.Group = {
@@ -159,9 +159,9 @@ class ServiceContext {
         }
     }
 
-    private async addUserToPermGroup(req: bus.AddUserToGroup_Request): Promise<bus.AddUserToGroup_Response> {
-        const group = await this.db.groups.findOne({'_id': req.groupId})
-        const user = await this.db.users.findOne({'_id': req.userId})
+    private async addUserToPermGroup(req: buslive.AddUserToGroup_Request): Promise<buslive.AddUserToGroup_Response> {
+        const group = await this.db.groups.findOne({ '_id': req.groupId })
+        const user = await this.db.users.findOne({ '_id': req.userId })
         if (!group) {
             throw new Error('group not found')
         }
@@ -172,25 +172,25 @@ class ServiceContext {
         user.groups.push({
             ref: group._id
         })
-        await this.db.users.replaceOne({'_id': user._id}, user)
+        await this.db.users.replaceOne({ '_id': user._id }, user)
         return {}
     }
 
-    private async givePermission(req: bus.GivePermission_Request): Promise<bus.GivePermission_Response> {
+    private async givePermission(req: buslive.GivePermission_Request): Promise<buslive.GivePermission_Response> {
         if (req.userId) {
-            const item = (await this.db.users.findOne({'_id': req.userId}))!
+            const item = (await this.db.users.findOne({ '_id': req.userId }))!
             item.permissions.push({
                 action: req.actionRegex,
                 resource: req.resourceRegex
             })
-            await this.db.users.replaceOne({'_id': req.userId}, item)
+            await this.db.users.replaceOne({ '_id': req.userId }, item)
         } else if (req.groupId) {
-            const item = (await this.db.groups.findOne({'_id': req.groupId}))!
+            const item = (await this.db.groups.findOne({ '_id': req.groupId }))!
             item.permissions.push({
                 action: req.actionRegex,
                 resource: req.resourceRegex
             })
-            await this.db.groups.replaceOne({'_id': req.groupId}, item)
+            await this.db.groups.replaceOne({ '_id': req.groupId }, item)
         } else {
             throw new Error('unvalid request')
         }
@@ -206,7 +206,7 @@ class ServiceContext {
             const g = groups.shift()!
             done.add(g)
 
-            const gDb = await this.db.groups.findOne({'_id': g})
+            const gDb = await this.db.groups.findOne({ '_id': g })
             if (!gDb) {
                 console.error(`can not find group ${g}`)
                 continue
