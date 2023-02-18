@@ -215,7 +215,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     EventGroupMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.EventGroup>> => {
-            const id = new ids.ID(wkids.wellknown.eventGroup, undefined, ids.ID.parse(params.event_id))
+            const id = new ids.ID(wkids.wellknown.eventGroup, undefined)
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', id.toString())
 
             const item: db.EventGroup = {

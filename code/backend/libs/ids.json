@@ -1,12 +1,12 @@
 {
     "wellknown": {
-        "user": "user",
-        "group": "group",
-        "certs": "cert",
+        "user": "usr",
+        "group": "grp",
+        "certs": "cer",
         "certAttempt": "ceratt",
         "certTemplate": "certem",
         "requirement": "req",
-        "event": "event",
-        "eventGroup": "eventGrp"
+        "event": "eve",
+        "eventGroup": "evegrp"
     }
 }
