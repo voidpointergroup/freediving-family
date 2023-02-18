@@ -45,7 +45,7 @@ jobs:
         run: "cargo install neomake"
       - name: publish image
         run: |
-          neomake x -c image -a app=${{ matrix.app }} -a flavor=${{ matrix.flavor }} -a version=${{ needs.version.outputs.version }}
+          neomake x -c image -a app=${{ matrix.app }} -a flavor=${{ matrix.flavor }} -a version=0.1.${{ needs.version.outputs.version }}
 
   helm:
     name: harbor (${{ needs.version.outputs.version }} - helm chart)
@@ -67,4 +67,4 @@ jobs:
       - name: publish helm
         run: |
           ls -algh
-          neomake x -c helm -a chart=freediving-family -a version=${{ needs.version.outputs.version }}
+          neomake x -c helm -a chart=freediving-family -a version=0.1.${{ needs.version.outputs.version }}
