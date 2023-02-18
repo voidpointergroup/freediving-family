@@ -1,16 +1,27 @@
 name: release
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "version"
-        required: true
+  push:
+#   workflow_dispatch:
+#     inputs:
+#       version:
+#         description: "version"
+#         required: true
 
 jobs:
-  images:
-    name: harbor (${{ github.event.inputs.version }} - ${{ matrix.app }}/${{ matrix.flavor }})
+  version:
+    name: version
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.export.outputs.version }}
+    steps:
+      - name: export
+        run: 'printf "version=$(date +%s)" >> $GITHUB_OUTPUT'
+
+  images:
+    name: harbor (${{ needs.version.outputs.version }} - ${{ matrix.app }}/${{ matrix.flavor }})
+    runs-on: ubuntu-latest
+    needs: version
     strategy:
       matrix:
         include:
@@ -34,13 +45,15 @@ jobs:
         run: "cargo install neomake"
       - name: publish image
         run: |
-          neomake x -c image -a app=${{ matrix.app }} -a flavor=${{ matrix.flavor }} -a version=${{ github.event.inputs.version }}
+          neomake x -c image -a app=${{ matrix.app }} -a flavor=${{ matrix.flavor }} -a version=${{ needs.version.outputs.version }}
 
   helm:
-    name: harbor (${{ github.event.inputs.version }} - helm chart)
+    name: harbor (${{ needs.version.outputs.version }} - helm chart)
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    needs: images
+    needs:
+      - version
+      - images
     steps:
       - uses: actions/checkout@v3
       - name: install rust
@@ -54,4 +67,4 @@ jobs:
       - name: publish helm
         run: |
           ls -algh
-          neomake x -c helm -a chart=freediving-family -a version=${{ github.event.inputs.version }}
+          neomake x -c helm -a chart=freediving-family -a version=${{ needs.version.outputs.version }}
