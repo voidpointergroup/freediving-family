@@ -13,7 +13,6 @@ COPY ./apps/$app/package-lock.json .
 RUN npm i
 
 COPY ./apps/$app ./
-RUN npm run codegen
 RUN npx ncc build src/$flavor.ts -o /app --target es2020
 
 FROM node:18-alpine as runtime-env
