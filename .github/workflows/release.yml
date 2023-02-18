@@ -15,7 +15,7 @@ jobs:
     outputs:
       version: ${{ steps.export.outputs.version }}
     steps:
-      - name: export
+      - id: export
         run: 'printf "version=$(date +%s)" >> $GITHUB_OUTPUT'
 
   images:
