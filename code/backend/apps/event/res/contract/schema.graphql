@@ -8,8 +8,7 @@ extend type Group @key(fields: "id") {
 
 type EventAttendee {
   attendee: User!
-  role: String!
-  perm_groups: [Group!]!
+  role: Group!
 }
 
 type EventGroup @key(fields: "id") {
@@ -46,7 +45,7 @@ input EventGroupCreateInput {
 
 input AddAttendeeToEventGroupInput {
   user_id: String!
-  role: String! # = permission group ID
+  role_id: String! # = permission group ID
 }
 
 type EventGroupMutation {
