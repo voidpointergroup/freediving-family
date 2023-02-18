@@ -170,7 +170,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return (await ctx.svc.instance().readEvent(params.id)).graphql()
         },
         events: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Event>[]> => {
-            return (await ctx.svc.instance().readEvents(params.params.archived ? params.params.archived : undefined)).map(x => x.graphql())
+            return (await ctx.svc.instance().readEvents(params.params.archived !== undefined ? params.params.archived! : undefined)).map(x => x.graphql())
         },
     },
     Event: {
