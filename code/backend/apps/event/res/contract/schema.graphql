@@ -24,13 +24,19 @@ type Event @key(fields: "id") {
   name: String!
   starts_at: String!
   ends_at: String!
+  archived: Boolean!
 
   groups: [EventGroup!]!
   perm_groups: [Group!]!
 }
 
+type QueryEventsParams {
+  archived: Boolean
+}
+
 extend type Query {
   event(id: String!): Event!
+  events(params: QueryEventsParams!): [Event!]!
 }
 
 input EventCreateInput {
@@ -60,6 +66,7 @@ type EventGroupMutation {
 
 type EventMutation {
   create(input: EventCreateInput!): Event!
+  set_archived(id: String!): Boolean!
 
   group: EventGroupMutation!
 }

@@ -12,6 +12,7 @@ export interface Event extends db.WithID<string> {
     name: string
     starts_at: string
     ends_at: string
+    archived: boolean
 
     perm_groups: db.ForeignKey<string>[]
 }

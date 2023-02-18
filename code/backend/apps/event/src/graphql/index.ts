@@ -82,6 +82,34 @@ class ServiceContext {
         }
     }
 
+    public async readEvents(includeArchived: boolean | undefined): Promise<{ db: db.Event, graphql: () => ut.DeepPartial<gql.Event> }[]> {
+        let filter: mongo.Filter<db.Event> = {}
+        if (includeArchived !== undefined) {
+            filter = {
+                ...filter,
+                archived: includeArchived
+            }
+        }
+        const cursor = this.db.events.find(filter)
+
+        const events = []
+        while (await cursor.hasNext()) {
+            const event = (await cursor.next())!
+            if (!(await this.authHelper.mayAccess(this.gwctx.user.id, 'read', event._id)).permitted) {
+                continue
+            }
+
+            events.push({
+                db: event,
+                graphql: () => {
+                    return this.makeEvent(event)
+                }
+            })
+        }
+
+        return events
+    }
+
     public async readEvent(id: string): Promise<{ db: db.Event, graphql: () => ut.DeepPartial<gql.Event> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
@@ -205,7 +233,8 @@ const resolvers: gql.Resolvers<RequestContext> = {
                     return {
                         ref: x
                     }
-                })
+                }),
+                archived: false
             }
             await ctx.svc.instance().db.events.insertOne(item)
 
