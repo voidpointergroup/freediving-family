@@ -1,7 +1,7 @@
 import * as db from '../../../libs/shared/src/db'
 
 export const DATABASE = {
-    db: 'certification',
+    db: 'ff-certification',
     collections: {
         certs: 'certs',
         certAttempts: 'cert_attempts',

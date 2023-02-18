@@ -1,7 +1,7 @@
-import * as db from  '../../../libs/shared/src/db'
+import * as db from '../../../libs/shared/src/db'
 
 export const DATABASE = {
-    db: 'account',
+    db: 'ff-account',
     collections: {
         users: 'users',
         groups: 'groups'

@@ -183,10 +183,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 extends: [eventPermGroupReqD.id]
             }, {
                 name: `${params.input.name} - Students`,
-                permissions: [{
-                    resourceRegex: `^(${wkids.wellknown.certAttempt}.*)$`, // todo register new resource for group | user to view
-                    actionRegex: 'read'
-                }],
+                permissions: [],
                 extends: [eventPermGroupReqD.id]
             }]
             const groupIDs: string[] = [eventPermGroupReqD.id]

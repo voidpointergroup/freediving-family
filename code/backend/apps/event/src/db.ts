@@ -1,7 +1,7 @@
 import * as db from '../../../libs/shared/src/db'
 
 export const DATABASE = {
-    db: 'event',
+    db: 'ff-event',
     collections: {
         events: 'events',
         eventGroups: 'event_groups'
