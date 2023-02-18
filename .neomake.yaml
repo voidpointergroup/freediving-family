@@ -10,21 +10,27 @@ env:
   - env:
       APP: apofed
       FLAVOR: graphql
+      CMD_CODEGEN: ""
   - env:
       APP: account
       FLAVOR: login
+      CMD_CODEGEN: "npm run codegen"
   - env:
       APP: account
       FLAVOR: graphql
+      CMD_CODEGEN: "npm run codegen"
   - env:
       APP: account
       FLAVOR: worker
+      CMD_CODEGEN: "npm run codegen"
   - env:
       APP: certification
       FLAVOR: graphql
+      CMD_CODEGEN: "npm run codegen"
   - env:
       APP: event
       FLAVOR: graphql
+      CMD_CODEGEN: "npm run codegen"
 
 chains:
   cmd:
@@ -51,7 +57,7 @@ chains:
     tasks:
       - script: |
           cd code/backend/apps/$APP
-          npm run codegen || true
+          $CMD_CODEGEN
 
   prepare:
     pre:
@@ -67,8 +73,6 @@ chains:
           npm i
 
   image:
-    pre:
-      - prepare
     tasks:
       - script: |
           printf $REG_PASS | docker login -u $REG_USER --password-stdin $REG_BASE
@@ -79,8 +83,6 @@ chains:
           docker push $IMAGE_NAME
 
   images:
-    pre:
-      - prepare
     matrix:
       - *services
     tasks:
