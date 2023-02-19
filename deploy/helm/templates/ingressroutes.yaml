@@ -7,7 +7,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`freediving-family.chinook.k8s.voidpointergroup.com`) && Path(`/v1/graphql`)
+      match: Host(`api.freediving-family.chinook.k8s.voidpointergroup.com`)
       priority: 10
       services:
         - kind: Service
