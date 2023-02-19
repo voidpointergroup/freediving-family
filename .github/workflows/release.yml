@@ -43,10 +43,11 @@ jobs:
             flavor: "graphql"
     steps:
       - uses: actions/checkout@v3
-      - run: curl -LX GET -o ./complate.deb $COMPLATE_DEB
-      - run: sudo apt-get install -y ./complate.deb
-      - run: curl -LX GET -o ./neomake.deb $COMPLATE_DEB
-      - run: sudo apt-get install -y ./neomake.deb
+      - run: |
+          curl -LX GET -o ./complate.deb $COMPLATE_DEB
+          sudo apt-get install -y ./complate.deb
+          curl -LX GET -o ./neomake.deb $NEOMAKE_DEB
+          sudo apt-get install -y ./neomake.deb
       - name: publish image
         run: |
           neomake x -c image -a app=${{ matrix.app }} -a flavor=${{ matrix.flavor }} -a version=0.1.${{ needs.version.outputs.version }}
@@ -60,10 +61,11 @@ jobs:
       - images
     steps:
       - uses: actions/checkout@v3
-      - run: curl -LX GET -o ./complate.deb $COMPLATE_DEB
-      - run: sudo apt-get install -y ./complate.deb
-      - run: curl -LX GET -o ./neomake.deb $COMPLATE_DEB
-      - run: sudo apt-get install -y ./neomake.deb
+      - run: |
+          curl -LX GET -o ./complate.deb $COMPLATE_DEB
+          sudo apt-get install -y ./complate.deb
+          curl -LX GET -o ./neomake.deb $NEOMAKE_DEB
+          sudo apt-get install -y ./neomake.deb
       - name: install dependencies
         run: "curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"
       - name: publish helm
