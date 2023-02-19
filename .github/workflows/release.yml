@@ -8,8 +8,8 @@ on:
 #         required: true
 
 env:
-  COMPLATE_DEB: https://github.com/replicadse/complate/releases/download/0.10.6/complate_0.10.6_amd64.deb
-  NEOMAKE_DEB: https://github.com/voidpointergroup/neomake/releases/download/0.3.8/neomake_0.3.8_amd64.deb
+  COMPLATE_DEB: https://github.com/replicadse/complate/releases/download/0.10.7/complate_0.10.7_amd64.deb
+  NEOMAKE_DEB: https://github.com/voidpointergroup/neomake/releases/download/0.3.14/neomake_0.3.14_amd64.deb
 
 jobs:
   version:
@@ -70,5 +70,4 @@ jobs:
         run: "curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"
       - name: publish helm
         run: |
-          ls -algh
           neomake x -c helm -a chart=freediving-family -a version=0.1.${{ needs.version.outputs.version }}
