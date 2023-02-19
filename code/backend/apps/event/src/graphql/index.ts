@@ -56,6 +56,7 @@ class ServiceContext {
             name: item.name,
             starts_at: item.starts_at,
             ends_at: item.ends_at,
+            archived: item.archived,
 
             perm_groups: item.perm_groups.map(x => {
                 return {
