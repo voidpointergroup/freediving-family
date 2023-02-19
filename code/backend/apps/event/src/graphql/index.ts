@@ -243,6 +243,13 @@ const resolvers: gql.Resolvers<RequestContext> = {
 
             return (await ctx.svc.instance().readEvent(id.toString())).graphql()
         },
+        set_archived: async (_partial, params, ctx): Promise<boolean> => {
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'update', params.id)
+            const event = await ctx.svc.instance().readEvent(params.id)
+            event.db.archived = params.value
+            await ctx.svc.instance().db.events.replaceOne({ '_id': params.id }, event.db)
+            return true
+        },
         group: async (_partial, _params, _ctx): Promise<ut.DeepPartial<gql.EventGroupMutation>> => {
             return {}
         },

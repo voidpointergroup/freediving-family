@@ -7,6 +7,13 @@ on:
 #         description: "version"
 #         required: true
 
+env:
+  INSTALL_TOOLS: |
+    curl -LX GET -o ./complate.deb https://github.com/replicadse/complate/releases/download/0.10.6/complate_0.10.6_amd64.deb
+    sudo apt-get install -y ./complate.deb
+    curl -LX GET -o ./neomake.deb https://github.com/voidpointergroup/neomake/releases/download/0.3.8/neomake_0.3.8_amd64.deb
+    sudo apt-get install -y ./neomake.deb
+
 jobs:
   version:
     name: version
@@ -39,10 +46,7 @@ jobs:
             flavor: "graphql"
     steps:
       - uses: actions/checkout@v3
-      - name: install rust
-        run: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
-      - name: install tools
-        run: "cargo install neomake"
+      - run: $INSTALL_TOOLS
       - name: publish image
         run: |
           neomake x -c image -a app=${{ matrix.app }} -a flavor=${{ matrix.flavor }} -a version=0.1.${{ needs.version.outputs.version }}
@@ -56,12 +60,7 @@ jobs:
       - images
     steps:
       - uses: actions/checkout@v3
-      - name: install rust
-        run: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
-      - name: install tools
-        run: |
-          cargo install neomake
-          cargo install complate
+      - run: $INSTALL_TOOLS
       - name: install dependencies
         run: "curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"
       - name: publish helm
