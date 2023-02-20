@@ -189,7 +189,9 @@ class ServiceContext {
             throw new Error('user not found')
         }
 
+        console.info(JSON.stringify(user.groups))
         user.groups = user.groups.filter(x => req.groupIds.indexOf(x.ref) <= -1)
+        console.info(JSON.stringify(user.groups))
 
         await this.db.users.replaceOne({ '_id': user._id }, user)
         return {}
