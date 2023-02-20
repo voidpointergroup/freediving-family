@@ -31,6 +31,7 @@ const config = {
 interface ServiceDB {
     events: mongo.Collection<db.Event>,
     eventGroups: mongo.Collection<db.EventGroup>,
+    attendeeships: mongo.Collection<db.Attendeeship>,
 }
 
 class ServiceContext {
@@ -70,16 +71,21 @@ class ServiceContext {
         return {
             id: item._id,
             name: item.name,
-            members: item.attendees.map(x => {
-                return {
-                    attendee: {
-                        id: x.attendee.ref
-                    },
-                    role: {
-                        id: x.role.ref
-                    }
-                }
-            })
+        }
+    }
+
+    private makeAttendeeship(item: db.Attendeeship): ut.DeepPartial<gql.EventAttendeeship> {
+        return {
+            id: item._id,
+            attendee: {
+                id: item.user.ref
+            },
+            event_group: {
+                id: item.event_group.ref
+            },
+            perm_group: {
+                id: item.perm_group.ref
+            }
         }
     }
 
@@ -141,6 +147,21 @@ class ServiceContext {
         }
     }
 
+    public async readAttendeeship(id: string): Promise<{ db: db.Attendeeship, graphql: () => ut.DeepPartial<gql.EventAttendeeship> }> {
+        await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
+
+        const item = await this.db.attendeeships.findOne({ '_id': id })
+        if (!item) {
+            throw new Error(error.NotFound(id))
+        }
+        return {
+            db: item,
+            graphql: () => {
+                return this.makeAttendeeship(item)
+            }
+        }
+    }
+
     public async findEventGroupsForEvent(eventID: string): Promise<{ db: db.EventGroup, graphql: () => ut.DeepPartial<gql.EventGroup> }[]> {
         const groups = this.db.eventGroups.find({ 'event.ref': eventID })
         const res: { db: db.EventGroup, graphql: () => ut.DeepPartial<gql.EventGroup> }[] = []
@@ -154,6 +175,26 @@ class ServiceContext {
                 db: g,
                 graphql: () => {
                     return this.makeEventGroup(g)
+                }
+            })
+        }
+        return res
+    }
+
+    public async findAttendeeshipsForEventGroup(groupID: string): Promise<{ db: db.Attendeeship, graphql: () => ut.DeepPartial<gql.EventAttendeeship> }[]> {
+        const groups = this.db.attendeeships.find({ 'event_group.ref': groupID })
+
+        const res: { db: db.Attendeeship, graphql: () => ut.DeepPartial<gql.EventAttendeeship> }[] = []
+        while (await groups.hasNext()) {
+            const g = (await groups.next())!
+            if (!((await this.authHelper.mayAccess(this.gwctx.user.id, 'read', g._id)).permitted)) {
+                continue
+            }
+
+            res.push({
+                db: g,
+                graphql: () => {
+                    return this.makeAttendeeship(g)
                 }
             })
         }
@@ -175,8 +216,19 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     Event: {
-        groups: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.EventGroup[]>> => {
+        __resolveReference: async (partial, ctx): Promise<ut.DeepPartial<gql.Event>> => {
+            return (await ctx.svc.instance().readEvent(partial.id!)).graphql()
+        },
+        event_groups: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.EventGroup[]>> => {
             return (await ctx.svc.instance().findEventGroupsForEvent(partial.id!)).map(x => x.graphql())
+        },
+    },
+    EventGroup: {
+        __resolveReference: async (partial, ctx): Promise<ut.DeepPartial<gql.EventGroup>> => {
+            return (await ctx.svc.instance().readEventGroup(partial.id!)).graphql()
+        },
+        attendeeships: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.EventAttendeeship[]>> => {
+            return (await ctx.svc.instance().findAttendeeshipsForEventGroup(partial.id!)).map(x => x.graphql())
         },
     },
     Mutation: {
@@ -244,12 +296,25 @@ const resolvers: gql.Resolvers<RequestContext> = {
 
             return (await ctx.svc.instance().readEvent(id.toString())).graphql()
         },
-        set_archived: async (_partial, params, ctx): Promise<boolean> => {
+        update: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Event>> => {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'update', params.id)
             const event = await ctx.svc.instance().readEvent(params.id)
-            event.db.archived = params.value
+
+            if (params.in.name !== undefined) {
+                event.db.name = params.in.name!
+            }
+            if (params.in.starts_at !== undefined) {
+                event.db.starts_at = params.in.starts_at!
+            }
+            if (params.in.ends_at !== undefined) {
+                event.db.ends_at = params.in.ends_at!
+            }
+            if (params.in.archived !== undefined) {
+                event.db.archived = params.in.archived!
+            }
             await ctx.svc.instance().db.events.replaceOne({ '_id': params.id }, event.db)
-            return true
+
+            return (await ctx.svc.instance().readEvent(params.id)).graphql()
         },
         group: async (_partial, _params, _ctx): Promise<ut.DeepPartial<gql.EventGroupMutation>> => {
             return {}
@@ -257,7 +322,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
     },
     EventGroupMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.EventGroup>> => {
-            const id = new ids.ID(wkids.wellknown.eventGroup, undefined)
+            const id = new ids.ID(wkids.wellknown.eventGroup)
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', id.toString())
 
             const item: db.EventGroup = {
@@ -266,66 +331,36 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 event: {
                     ref: params.event_id,
                 },
-                attendees: []
             }
             await ctx.svc.instance().db.eventGroups.insertOne(item)
 
             return (await ctx.svc.instance().readEventGroup(id.toString())).graphql()
         },
-        add_attendee: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.EventAttendee>> => {
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'update', params.group_id)
-            const group = await ctx.svc.instance().readEventGroup(params.group_id)
+        add_attendee: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.EventAttendeeship>> => {
+            const id = new ids.ID(wkids.wellknown.eventAttendeeship)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'create', id.toString())
 
-            group.db.attendees.push({
-                attendee: {
+            const item: db.Attendeeship = {
+                _id: id.toString(),
+                event_group: {
+                    ref: params.event_group_id
+                },
+                user: {
                     ref: params.input.user_id
                 },
-                role: {
-                    ref: params.input.role_id
-                },
-            })
-
-            const addUserToPermGroupReq: buslive.AddUserToGroup_Request = {
-                userId: params.input.user_id,
-                groupIds: [params.input.role_id],
-            }
-            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
-                buslive.AddUserToGroup_Request.encode(addUserToPermGroupReq).finish())
-
-            await ctx.svc.instance().db.eventGroups.replaceOne({ '_id': group.db._id }, group.db)
-
-            return {
-                attendee: {
-                    id: params.input.user_id,
-                },
-                role: {
-                    id: params.input.role_id
+                perm_group: {
+                    ref: params.input.perm_group_id
                 }
             }
+            await ctx.svc.instance().db.attendeeships.insertOne(item)
+
+            return (await ctx.svc.instance().readAttendeeship(id.toString())).graphql()
         },
         remove_attendee: async (_partial, params, ctx): Promise<boolean> => {
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'update', params.group_id)
-            const group = await ctx.svc.instance().readEventGroup(params.group_id)
-
-            const matchingAttendees = group.db.attendees.filter(x => x.attendee.ref === params.user_id)
-            if (matchingAttendees.length === 0) {
-                return false
-            }
-
-            group.db.attendees = group.db.attendees.filter(x => {
-                return x.attendee.ref !== params.user_id
-            })
-            await ctx.svc.instance().db.eventGroups.replaceOne({ '_id': group.db._id }, group.db)
-
-            const removeUserFromPermGroupReq: buslive.AddUserToGroup_Request = {
-                userId: params.user_id,
-                groupIds: matchingAttendees.map(x => x.role.ref),
-            }
-            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.remove_user_from_perm_group}`,
-                buslive.RemoveUserFromGroup_Request.encode(removeUserFromPermGroupReq).finish())
-
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'delete', params.id)
+            await ctx.svc.instance().db.attendeeships.deleteOne({ '_id': params.id })
             return true
-        }
+        },
     }
 }
 
@@ -351,7 +386,8 @@ await apollo_standalone.startStandaloneServer(server, {
         return {
             svc: new Lazy<ServiceContext>(() => new ServiceContext({
                 events: mongoClient.db(db.DATABASE.db).collection(db.DATABASE.collections.events),
-                eventGroups: mongoClient.db(db.DATABASE.db).collection(db.DATABASE.collections.eventGroups)
+                eventGroups: mongoClient.db(db.DATABASE.db).collection(db.DATABASE.collections.eventGroups),
+                attendeeships: mongoClient.db(db.DATABASE.db).collection(db.DATABASE.collections.eventAttendeeships),
             }, natsConn, requestContext))
         }
     }

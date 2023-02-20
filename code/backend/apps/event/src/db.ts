@@ -4,7 +4,8 @@ export const DATABASE = {
     db: 'ff-event',
     collections: {
         events: 'events',
-        eventGroups: 'event_groups'
+        eventGroups: 'event_groups',
+        eventAttendeeships: 'event_attendeeships'
     }
 }
 
@@ -20,8 +21,10 @@ export interface Event extends db.WithID<string> {
 export interface EventGroup extends db.WithID<string> {
     name: string
     event: db.ForeignKey<string>
-    attendees: {
-        attendee: db.ForeignKey<string>,
-        role: db.ForeignKey<string>
-    }[]
+}
+
+export interface Attendeeship extends db.WithID<string> {
+    user: db.ForeignKey<string>
+    event_group: db.ForeignKey<string>,
+    perm_group: db.ForeignKey<string>
 }

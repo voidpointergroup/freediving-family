@@ -1,21 +1,26 @@
 extend type User @key(fields: "id") {
   id: String! @external
+
+  attendeeships: [EventAttendeeship!]!
 }
 
 extend type Group @key(fields: "id") {
   id: String! @external
 }
 
-type EventAttendee {
+type EventAttendeeship @key(fields: "id") {
+  id: String!
+
   attendee: User!
-  role: Group!
+  perm_group: Group!
+  event_group: EventGroup!
 }
 
 type EventGroup @key(fields: "id") {
   id: String!
   name: String!
 
-  members: [EventAttendee!]!
+  attendeeships: [EventAttendeeship!]!
 }
 
 type Event @key(fields: "id") {
@@ -26,7 +31,7 @@ type Event @key(fields: "id") {
   ends_at: String!
   archived: Boolean!
 
-  groups: [EventGroup!]!
+  event_groups: [EventGroup!]!
   perm_groups: [Group!]!
 }
 
@@ -49,24 +54,30 @@ input EventGroupCreateInput {
   name: String!
 }
 
-input AddAttendeeToEventGroupInput {
+input EventGroupAddAttendeeInput {
   user_id: String!
-  role_id: String! # = permission group ID
+  perm_group_id: String!
 }
 
 type EventGroupMutation {
   create(event_id: String!, input: EventGroupCreateInput!): EventGroup!
-
   add_attendee(
-    group_id: String!
-    input: AddAttendeeToEventGroupInput!
-  ): EventAttendee!
-  remove_attendee(group_id: String!, user_id: String!): Boolean!
+    event_group_id: String!
+    input: EventGroupAddAttendeeInput!
+  ): EventAttendeeship!
+  remove_attendee(id: String!): Boolean!
+}
+
+type UpdateEventInput {
+  name: String
+  starts_at: String
+  ends_at: String
+  archived: Boolean
 }
 
 type EventMutation {
   create(input: EventCreateInput!): Event!
-  set_archived(id: String!, value: Boolean!): Boolean!
+  update(id: String!, in: UpdateEventInput!): Event!
 
   group: EventGroupMutation!
 }
