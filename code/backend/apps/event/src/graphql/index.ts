@@ -356,7 +356,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
 
             const busReq: buslive.AddUserToGroup_Request = {
                 userId: params.input.user_id,
-                groupIds: [params.event_group_id]
+                groupIds: [params.input.perm_group_id]
             }
             await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
                 buslive.AddUserToGroup_Request.encode(busReq).finish())
