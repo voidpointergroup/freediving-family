@@ -354,6 +354,13 @@ const resolvers: gql.Resolvers<RequestContext> = {
             }
             await ctx.svc.instance().db.attendeeships.insertOne(item)
 
+            const busReq: buslive.AddUserToGroup_Request = {
+                userId: params.input.user_id,
+                groupIds: [params.event_group_id]
+            }
+            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
+                buslive.AddUserToGroup_Request.encode(busReq).finish())
+
             return (await ctx.svc.instance().readAttendeeship(id.toString())).graphql()
         },
         remove_attendee: async (_partial, params, ctx): Promise<boolean> => {
