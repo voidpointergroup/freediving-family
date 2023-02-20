@@ -365,7 +365,17 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
         remove_attendee: async (_partial, params, ctx): Promise<boolean> => {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'delete', params.id)
+
+            const att = (await ctx.svc.instance().db.attendeeships.findOne({ '_id': params.id }))!
             await ctx.svc.instance().db.attendeeships.deleteOne({ '_id': params.id })
+
+            const busReq: buslive.RemoveUserFromGroup_Request = {
+                userId: att.user.ref,
+                groupIds: [att.perm_group.ref]
+            }
+            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.remove_user_from_perm_group}`,
+                buslive.RemoveUserFromGroup_Request.encode(busReq).finish())
+
             return true
         },
     }
