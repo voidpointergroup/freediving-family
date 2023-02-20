@@ -68,7 +68,7 @@ type EventGroupMutation {
   remove_attendee(id: String!): Boolean!
 }
 
-type UpdateEventInput {
+input UpdateEventInput {
   name: String
   starts_at: String
   ends_at: String
