@@ -192,13 +192,16 @@ class ServiceContext {
         const remove = new Set(req.groupIds)
         const grps = new Set(user.groups.map(x => x.ref))
         for (const rem of remove.values()) {
+            console.info(rem)
             grps.delete(rem)
         }
         user.groups = Array.from(grps.values()).map(x => {
+            console.info(JSON.stringify(x))
             return {
                 ref: x
             }
         })
+        console.info(JSON.stringify(user.groups))
 
         await this.db.users.replaceOne({ '_id': user._id }, user)
         return {}
