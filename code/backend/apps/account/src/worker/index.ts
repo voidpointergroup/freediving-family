@@ -189,13 +189,7 @@ class ServiceContext {
             throw new Error('user not found')
         }
 
-        const gids = new Set(user.groups.map(x => x.ref))
-        req.groupIds.forEach(x => gids.delete(x))
-        user.groups = Array.from(gids.values()).map(x => {
-            return {
-                ref: x
-            }
-        })
+        user.groups = user.groups.filter(x => req.groupIds.indexOf(x.ref) <= -1)
 
         await this.db.users.replaceOne({ '_id': user._id }, user)
         return {}
