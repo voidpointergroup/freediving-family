@@ -296,7 +296,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 actionRegex: 'read',
                 resourceRegex: `^(${item._id})$`
             }
-            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.give_permission}`,
+            await ctx.svc.instance().nc.request(`${bus_topics.auth.live.give_permission}`,
                 buslive.GivePermission_Request.encode(permReq).finish())
 
             return (await ctx.svc.instance().readCertAttempt(cerattID.toString())).graphql()

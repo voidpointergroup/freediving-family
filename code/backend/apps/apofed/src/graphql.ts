@@ -31,7 +31,7 @@ class Service {
     constructor(private nc: nats.NatsConnection) { }
 
     public async verify(jwt: string): Promise<buslive.JwtVerification_Response_Details> {
-        const resp = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`, buslive.JwtVerification_Request.encode({
+        const resp = await this.nc.request(bus_topics.auth.live.verify, buslive.JwtVerification_Request.encode({
             jwt,
         }).finish(), {
             timeout: 2000,

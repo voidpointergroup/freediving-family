@@ -12,7 +12,7 @@ export class Auth {
             action: action,
             resourceId: resource
         }).finish()
-        const response = await this.nats.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`, req)
+        const response = await this.nats.request(bus_topics.auth.live.authorize, req)
         const responseT = bus.Authorize_Response.decode(response.data)
         if (!responseT.permitted) {
             console.error(responseT.reason)

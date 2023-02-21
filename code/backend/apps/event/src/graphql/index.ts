@@ -47,7 +47,7 @@ class ServiceContext {
             action: action,
             resourceId: resource
         }).finish()
-        const response = await this.nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`, req)
+        const response = await this.nc.request(bus_topics.auth.live.authorize, req)
         return buslive.Authorize_Response.decode(response.data).permitted
     }
 
@@ -249,7 +249,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 }],
                 extends: []
             }
-            const eventPermGroupResp = await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`,
+            const eventPermGroupResp = await ctx.svc.instance().nc.request(bus_topics.auth.live.create_perm_group,
                 buslive.AddPermissionGroup_Request.encode(eventPermGroupReq).finish())
             const eventPermGroupReqD = buslive.AddPermissionGroup_Response.decode(eventPermGroupResp.data)
 
@@ -274,7 +274,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             }]
             const groupIDs: string[] = [eventPermGroupReqD.id]
             for (const req of reqs) {
-                const resp = await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`,
+                const resp = await ctx.svc.instance().nc.request(bus_topics.auth.live.create_perm_group,
                     buslive.AddPermissionGroup_Request.encode(req).finish())
                 const respD = buslive.AddPermissionGroup_Response.decode(resp.data)
                 groupIDs.push(respD.id)
@@ -358,7 +358,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 userId: params.input.user_id,
                 groupIds: [params.input.perm_group_id]
             }
-            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`,
+            await ctx.svc.instance().nc.request(bus_topics.auth.live.add_user_to_perm_group,
                 buslive.AddUserToGroup_Request.encode(busReq).finish())
 
             return (await ctx.svc.instance().readAttendeeship(id.toString())).graphql()
@@ -373,7 +373,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 userId: att.user.ref,
                 groupIds: [att.perm_group.ref]
             }
-            await ctx.svc.instance().nc.request(`${bus_topics.auth.live._root}.${bus_topics.auth.live.remove_user_from_perm_group}`,
+            await ctx.svc.instance().nc.request(bus_topics.auth.live.remove_user_from_perm_group,
                 buslive.RemoveUserFromGroup_Request.encode(busReq).finish())
 
             return true

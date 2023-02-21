@@ -14,7 +14,7 @@ process.on('SIGINT', function () {
 const config = {
     sysconf: yaml.parse(process.env['APP_SYSCONF']!),
     worker: {
-        topic: `${bus_topics.auth.live._root}.>`,
+        topic: `>`,
         queue: 'e7d64f3a-65ac-4956-958e-062692949539'
     },
 }
@@ -42,37 +42,37 @@ class ServiceContext {
         for await (const msg of sub) {
             try {
                 console.info(`processing message on ${msg.subject}`)
-                if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.verify}`) {
+                if (msg.subject === bus_topics.auth.live.verify) {
                     const req = buslive.JwtVerification_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.verify(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(buslive.JwtVerification_Response.encode(resp).finish(), {})
-                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.authorize}`) {
+                } else if (msg.subject === bus_topics.auth.live.authorize) {
                     const req = buslive.Authorize_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.authorize(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(buslive.Authorize_Response.encode(resp).finish(), {})
-                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.give_permission}`) {
+                } else if (msg.subject === bus_topics.auth.live.give_permission) {
                     const req = buslive.GivePermission_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.givePermission(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(buslive.GivePermission_Response.encode(resp).finish(), {})
-                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.create_perm_group}`) {
+                } else if (msg.subject === bus_topics.auth.live.create_perm_group) {
                     const req = buslive.AddPermissionGroup_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.createPermGroup(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(buslive.AddPermissionGroup_Response.encode(resp).finish(), {})
-                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.add_user_to_perm_group}`) {
+                } else if (msg.subject === bus_topics.auth.live.add_user_to_perm_group) {
                     const req = buslive.AddUserToGroup_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.addUserToPermGroup(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(buslive.AddUserToGroup_Response.encode(resp).finish(), {})
-                } else if (msg.subject === `${bus_topics.auth.live._root}.${bus_topics.auth.live.remove_user_from_perm_group}`) {
+                } else if (msg.subject === bus_topics.auth.live.remove_user_from_perm_group) {
                     const req = buslive.RemoveUserFromGroup_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
                     const resp = await this.removeUserFromPermGroup(req)
