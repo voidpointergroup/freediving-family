@@ -245,29 +245,29 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
     },
     RequirementMutation: {
-        set_observed: async (_partial, params, ctx): Promise<boolean> => {
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'observe', params.id)
+        update: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Requirement>> => {
             const item = await ctx.svc.instance().readRequirement(params.id)
-            item.db.observed = params.accomplished ? {
-                at: new Date().toISOString(),
-                by: {
-                    ref: ctx.svc.instance().gwctx.user.id
+
+            if (params.input.observed) {
+                await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'observe', params.id)
+                item.db.observed = {
+                    at: new Date().toISOString(),
+                    by: {
+                        ref: ctx.svc.instance().gwctx.user.id
+                    }
                 }
-            } : undefined
-            await ctx.svc.instance().db.requirements.replaceOne({ '_id': item.db._id }, item.db)
-            return true
-        },
-        set_approved: async (_partial, params, ctx): Promise<boolean> => {
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'observe', params.id)
-            const item = await ctx.svc.instance().readRequirement(params.id)
-            item.db.approved = params.accomplished ? {
-                at: new Date().toISOString(),
-                by: {
-                    ref: ctx.svc.instance().gwctx.user.id
+            }
+            if (params.input.approved) {
+                await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'approve', params.id)
+                item.db.approved = {
+                    at: new Date().toISOString(),
+                    by: {
+                        ref: ctx.svc.instance().gwctx.user.id
+                    }
                 }
-            } : undefined
+            }
             await ctx.svc.instance().db.requirements.replaceOne({ '_id': item.db._id }, item.db)
-            return true
+            return (await ctx.svc.instance().readRequirement(params.id)).graphql()
         },
     },
     CertAttemptMutation: {

@@ -78,9 +78,13 @@ type CertTemplateMutation {
   delete(id: String!): Boolean!
 }
 
+input UpdateRequirementInput {
+  observed: Boolean
+  approved: Boolean
+}
+
 type RequirementMutation {
-  set_observed(id: String!, accomplished: Boolean!): Boolean!
-  set_approved(id: String!, accomplished: Boolean!): Boolean!
+  update(id: String!, input: UpdateRequirementInput!): Requirement!
 }
 
 extend type Mutation {

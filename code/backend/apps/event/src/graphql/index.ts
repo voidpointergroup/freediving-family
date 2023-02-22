@@ -181,7 +181,7 @@ class ServiceContext {
         return res
     }
 
-    public async findAttendeeshipsForEventGroup(filter: mongo.Filter<db.Attendeeship>): Promise<{ db: db.Attendeeship, graphql: () => ut.DeepPartial<gql.EventAttendeeship> }[]> {
+    public async findAttendeeships(filter: mongo.Filter<db.Attendeeship>): Promise<{ db: db.Attendeeship, graphql: () => ut.DeepPartial<gql.EventAttendeeship> }[]> {
         const groups = this.db.attendeeships.find(filter)
 
         const res: { db: db.Attendeeship, graphql: () => ut.DeepPartial<gql.EventAttendeeship> }[] = []
@@ -228,12 +228,12 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return (await ctx.svc.instance().readEventGroup(partial.id!)).graphql()
         },
         attendeeships: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.EventAttendeeship[]>> => {
-            return (await ctx.svc.instance().findAttendeeshipsForEventGroup({ 'event_group.ref': partial.id! })).map(x => x.graphql())
+            return (await ctx.svc.instance().findAttendeeships({ 'event_group.ref': partial.id! })).map(x => x.graphql())
         },
     },
     User: {
         attendeeships: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.EventAttendeeship[]>> => {
-            return (await ctx.svc.instance().findAttendeeshipsForEventGroup({ 'user.ref': partial.id! })).map(x => x.graphql())
+            return (await ctx.svc.instance().findAttendeeships({ 'user.ref': partial.id! })).map(x => x.graphql())
         },
     },
     Mutation: {
