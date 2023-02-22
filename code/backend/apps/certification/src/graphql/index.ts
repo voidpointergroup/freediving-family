@@ -321,10 +321,8 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
         award: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Cert>> => {
             const certID = new ids.ID(wkids.wellknown.certs)
-            const now = new Date()
-
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', params.id)
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'award', certID.toString())
+            const now = new Date()
             const attempt = await ctx.svc.instance().readCertAttempt(params.id)
 
             const cert: db.Certificate = {
