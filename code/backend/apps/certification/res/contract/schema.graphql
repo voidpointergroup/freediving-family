@@ -66,6 +66,8 @@ input CertAttemptCreateInput {
 
 type CertAttemptMutation {
   create(input: CertAttemptCreateInput!): CertAttempt!
+
+  award(id: String!): Cert!
 }
 
 input CertTemplateCreateInput {

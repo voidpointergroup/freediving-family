@@ -319,6 +319,32 @@ const resolvers: gql.Resolvers<RequestContext> = {
 
             return (await ctx.svc.instance().readCertAttempt(cerattID.toString())).graphql()
         },
+        award: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Cert>> => {
+            const certID = new ids.ID(wkids.wellknown.certs)
+            const now = new Date()
+
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', params.id)
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'award', certID.toString())
+            const attempt = await ctx.svc.instance().readCertAttempt(params.id)
+
+            const cert: db.Certificate = {
+                _id: certID.toString(),
+                _created_at: now.toISOString(),
+                _updated_at: now.toISOString(),
+                name: attempt.db.name,
+                student: {
+                    ref: attempt.db.student.ref
+                },
+                awarded: {
+                    at: new Date().toISOString(),
+                    by: {
+                        ref: ctx.svc.instance().gwctx.user.id
+                    }
+                }
+            }
+            await ctx.svc.instance().db.certs.insertOne(cert)
+            return (await ctx.svc.instance().readCert(certID.toString())).graphql()
+        }
     },
     CertTemplateMutation: {
         create: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.CertTemplate>> => {
