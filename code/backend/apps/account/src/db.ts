@@ -16,13 +16,14 @@ export interface User extends db.WithID<string>, db.WithTimestamps {
     groups: db.ForeignKey<string>[]
 }
 
-
 export interface Permission {
     action: string
     resource: string
 }
+
 export interface Group extends db.WithID<string>, db.WithTimestamps {
     name: string
+    active: boolean
     permissions: Permission[]
     extends: db.ForeignKey<string>[]
 }

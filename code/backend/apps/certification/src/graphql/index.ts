@@ -248,6 +248,11 @@ const resolvers: gql.Resolvers<RequestContext> = {
         update: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Requirement>> => {
             const item = await ctx.svc.instance().readRequirement(params.id)
 
+            const attempt = await ctx.svc.instance().readCertAttempt(item.db.attempt.ref)
+            if (Date.parse(attempt.db.ends_at) < new Date().valueOf()) {
+                throw new Error('can not modify - certificate attempt already ended')
+            }
+
             if (params.input.observed) {
                 await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'observe', params.id)
                 item.db.observed = {
@@ -284,6 +289,9 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 await ctx.svc.instance().db.requirements.insertOne({
                     _id: reqID,
                     name: req.name,
+                    attempt: {
+                        ref: cerattID.toString()
+                    },
                     observed: undefined,
                     approved: undefined,
                 })
@@ -324,6 +332,9 @@ const resolvers: gql.Resolvers<RequestContext> = {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'award', certID.toString())
             const now = new Date()
             const attempt = await ctx.svc.instance().readCertAttempt(params.id)
+            if (Date.parse(attempt.db.ends_at) < now.valueOf()) {
+                throw new Error('can not modify - certificate attempt already ended')
+            }
 
             const cert: db.Certificate = {
                 _id: certID.toString(),

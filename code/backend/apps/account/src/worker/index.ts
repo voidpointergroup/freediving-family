@@ -147,6 +147,7 @@ class ServiceContext {
             _created_at: now,
             _updated_at: now,
             name: req.name,
+            active: true,
             permissions: req.permissions.map(x => {
                 return {
                     action: x.actionRegex,
@@ -229,6 +230,9 @@ class ServiceContext {
             const gDb = await this.db.groups.findOne({ '_id': g })
             if (!gDb) {
                 console.error(`can not find group ${g}`)
+                continue
+            }
+            if (!gDb.active) {
                 continue
             }
             for (const perm of gDb.permissions) {

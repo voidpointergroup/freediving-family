@@ -19,6 +19,7 @@ export interface CertificateTemplate extends db.WithID<string>, db.WithTimestamp
 
 export interface Requirement extends db.WithID<string> {
     name: string
+    attempt: db.ForeignKey<string>
 
     observed: {
         by: db.ForeignKey<string>
