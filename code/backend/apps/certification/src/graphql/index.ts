@@ -197,7 +197,25 @@ const resolvers: gql.Resolvers<RequestContext> = {
             return (await ctx.svc.instance().readRequirement(params.id)).graphql()
         },
     },
+    Requirement: {
+        __resolveReference: async (partial, ctx): Promise<ut.DeepPartial<gql.Requirement>> => {
+            return (await ctx.svc.instance().readRequirement(partial.id!)).graphql()
+        },
+    },
+    CertTemplate: {
+        __resolveReference: async (partial, ctx): Promise<ut.DeepPartial<gql.CertTemplate>> => {
+            return (await ctx.svc.instance().readCertTemplate(partial.id!)).graphql()
+        },
+    },
+    Cert: {
+        __resolveReference: async (partial, ctx): Promise<ut.DeepPartial<gql.Cert>> => {
+            return (await ctx.svc.instance().readCert(partial.id!)).graphql()
+        },
+    },
     CertAttempt: {
+        __resolveReference: async (partial, ctx): Promise<ut.DeepPartial<gql.CertAttempt>> => {
+            return (await ctx.svc.instance().readCertAttempt(partial.id!)).graphql()
+        },
         requirements: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.Requirement[]>> => {
             const item = await ctx.svc.instance().readCertAttempt(partial.id!)
             return await Promise.all(item.db.requirements.map(async x => {
