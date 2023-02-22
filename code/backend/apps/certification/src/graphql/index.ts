@@ -341,6 +341,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 }
             }
             await ctx.svc.instance().db.certs.insertOne(cert)
+            await ctx.svc.instance().db.certAttempts.deleteOne({ ' _id': params.id })
             return (await ctx.svc.instance().readCert(certID.toString())).graphql()
         }
     },
