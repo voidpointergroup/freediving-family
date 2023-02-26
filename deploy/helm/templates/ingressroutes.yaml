@@ -21,9 +21,9 @@ spec:
       priority: 10
       services:
         - kind: Service
-          name: keycloak
+          name: freediving-family-keycloak
           namespace: freediving-family
-          port: 8080
+          port: 80
           responseForwarding:
             flushInterval: 1ms
   tls:
