@@ -59,15 +59,32 @@ class ServiceContext {
             started_at: item.started_at,
             ends_at: item.ends_at,
             student: {
-                id: item.student.ref,
+                id: item.student.ref
             },
+            observer: {
+                id: item.observer.ref
+            },
+            approver: {
+                id: item.observer.ref
+            }
+        }
+    }
+
+    private makeRequirement(item: db.Requirement): ut.DeepPartial<gql.Requirement> {
+        return {
+            id: item._id,
+            name: item.name,
+            observed_by: item.observed ? { id: item.observed.by.ref } : undefined,
+            observed_at: item.observed ? item.observed.at : undefined,
+            approved_by: item.approved ? { id: item.approved.by.ref } : undefined,
+            approved_at: item.approved ? item.approved.at : undefined,
         }
     }
 
     public async readCert(id: string): Promise<{ db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
-        const item = await this.db.certs.findOne({ '_id': id })
+        const item = await this.db.certs.findOne({ _id: id })
         if (!item) {
             throw new Error(error.NotFound(id))
         }
@@ -82,7 +99,7 @@ class ServiceContext {
     public async readCertAttempt(id: string): Promise<{ db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
-        const item = await this.db.certAttempts.findOne({ '_id': id })
+        const item = await this.db.certAttempts.findOne({ _id: id })
         if (!item) {
             throw new Error(error.NotFound(id))
         }
@@ -96,8 +113,7 @@ class ServiceContext {
 
     public async readCertTemplate(id: string): Promise<{ db: db.CertificateTemplate, graphql: () => ut.DeepPartial<gql.CertTemplate> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
-
-        const item = await this.db.certTemplates.findOne({ '_id': id })
+        const item = await this.db.certTemplates.findOne({ _id: id })
         if (!item) {
             throw new Error(error.NotFound(id))
         }
@@ -120,27 +136,39 @@ class ServiceContext {
     public async readRequirement(id: string): Promise<{ db: db.Requirement, graphql: () => ut.DeepPartial<gql.Requirement> }> {
         await this.authHelper.mustAccess(this.gwctx.user.id, 'read', id)
 
-        const item = await this.db.requirements.findOne({ '_id': id })
+        const item = await this.db.requirements.findOne({ _id: id })
         if (!item) {
             throw new Error(error.NotFound(id))
         }
         return {
             db: item,
             graphql: () => {
-                return {
-                    id: item._id,
-                    name: item.name,
-                    observed_by: item.observed ? { id: item.observed.by.ref } : undefined,
-                    observed_at: item.observed ? item.observed.at : undefined,
-                    approved_by: item.approved ? { id: item.approved.by.ref } : undefined,
-                    approved_at: item.approved ? item.approved.at : undefined,
-                }
+                return this.makeRequirement(item)
             }
         }
     }
 
-    public async findCertsForUser(user_id: string): Promise<{ db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert> }[]> {
-        const certs = this.db.certs.find({ 'student.ref': user_id })
+    public async findRequirements(filter: mongo.Filter<db.Requirement>): Promise<{ db: db.Requirement, graphql: () => ut.DeepPartial<gql.Requirement> }[]> {
+        const reqs = this.db.requirements.find(filter)
+
+        const res: { db: db.Requirement, graphql: () => ut.DeepPartial<gql.Requirement> }[] = []
+        while (await reqs.hasNext()) {
+            const c = (await reqs.next())!
+            if (!(await this.authHelper.mayAccess(this.gwctx.user.id, 'read', c._id)).permitted) {
+                continue
+            }
+            res.push({
+                db: c,
+                graphql: () => {
+                    return this.makeRequirement(c)
+                }
+            })
+        }
+        return res
+    }
+
+    public async findCerts(filter: mongo.Filter<db.Certificate>): Promise<{ db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert> }[]> {
+        const certs = this.db.certs.find(filter)
 
         const certsRes: { db: db.Certificate, graphql: () => ut.DeepPartial<gql.Cert> }[] = []
         while (await certs.hasNext()) {
@@ -158,8 +186,8 @@ class ServiceContext {
         return certsRes
     }
 
-    public async findCertAttemptsForUser(user_id: string): Promise<{ db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt> }[]> {
-        const certs = this.db.certAttempts.find({ 'student.ref': user_id })
+    public async findCertAttempts(filter: mongo.Filter<db.CertificateAttempt>): Promise<{ db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt> }[]> {
+        const certs = this.db.certAttempts.find(filter)
 
         const certsRes: { db: db.CertificateAttempt, graphql: () => ut.DeepPartial<gql.CertAttempt> }[] = []
         while (await certs.hasNext()) {
@@ -226,11 +254,24 @@ const resolvers: gql.Resolvers<RequestContext> = {
     User: {
         certs: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.Cert[]>> => {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
-            return (await ctx.svc.instance().findCertsForUser(partial.id!)).map(x => x.graphql())
+            return (await ctx.svc.instance().findCerts({ 'student.ref': partial.id! })).map(x => x.graphql())
         },
         cert_attempts: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.CertAttempt[]>> => {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
-            return (await ctx.svc.instance().findCertAttemptsForUser(partial.id!)).map(x => x.graphql())
+            return (await ctx.svc.instance().findCertAttempts({ 'student.ref': partial.id! })).map(x => x.graphql())
+        },
+        to_approve: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.Requirement[]>> => {
+            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
+            const attempts = await ctx.svc.instance().findCertAttempts({ 'approver.ref': partial.id! })
+            const reqs: ut.DeepPartial<gql.Requirement>[] = []
+            for (const att of attempts) {
+                for (const req of await ctx.svc.instance().findRequirements({ 'attempt.ref': att.db._id! })) {
+                    if (req.db.observed && !req.db.approved) {
+                        reqs.push(req.graphql())
+                    }
+                }
+            }
+            return reqs
         },
     },
     Mutation: {
@@ -271,7 +312,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
                     }
                 }
             }
-            await ctx.svc.instance().db.requirements.replaceOne({ '_id': item.db._id }, item.db)
+            await ctx.svc.instance().db.requirements.replaceOne({ _id: item.db._id }, item.db)
             return (await ctx.svc.instance().readRequirement(params.id)).graphql()
         },
     },
@@ -306,6 +347,12 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 ends_at: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
                 student: {
                     ref: params.input.student_id,
+                },
+                observer: {
+                    ref: params.input.observer_id,
+                },
+                approver: {
+                    ref: params.input.approver_id,
                 },
                 name: template.db.name,
                 requirements: Array.from(reqIDs.values()).map(x => {
@@ -352,9 +399,9 @@ const resolvers: gql.Resolvers<RequestContext> = {
                 }
             }
             await ctx.svc.instance().db.certs.insertOne(cert)
-            await ctx.svc.instance().db.certAttempts.deleteOne({ '_id': params.id })
+            await ctx.svc.instance().db.certAttempts.deleteOne({ _id: params.id })
             for (const req of attempt.db.requirements) {
-                await ctx.svc.instance().db.requirements.deleteOne({ '_id': req.ref })
+                await ctx.svc.instance().db.requirements.deleteOne({ _id: req.ref })
             }
             return (await ctx.svc.instance().readCert(certID.toString())).graphql()
         }
@@ -381,7 +428,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
         },
         delete: async (_partial, params, ctx): Promise<boolean> => {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'delete', params.id!)
-            await ctx.svc.instance().db.certTemplates.deleteOne({ '_id': params.id! })
+            await ctx.svc.instance().db.certTemplates.deleteOne({ _id: params.id! })
             return true
         },
     }

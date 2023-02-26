@@ -5,6 +5,7 @@
             "authorize": "ff.bus.core.v1.live.auth.$authorize",
             "give_permission": "ff.bus.core.v1.live.auth.$give_permission",
             "create_perm_group": "ff.bus.core.v1.live.auth.$create_perm_group",
+            "update_perm_group": "ff.bus.core.v1.live.auth.$update_perm_group",
             "add_user_to_perm_group": "ff.bus.core.v1.live.auth.$add_user_to_perm_group",
             "remove_user_from_perm_group": "ff.bus.core.v1.live.auth.$remove_user_from_perm_group"
         }

@@ -34,6 +34,8 @@ export interface Requirement extends db.WithID<string> {
 export interface CertificateAttempt extends db.WithID<string>, db.WithTimestamps {
     name: string
     student: db.ForeignKey<string>
+    observer: db.ForeignKey<string>
+    approver: db.ForeignKey<string>
 
     started_at: string
     ends_at: string

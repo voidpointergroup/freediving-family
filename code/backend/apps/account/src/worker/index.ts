@@ -60,6 +60,12 @@ class ServiceContext {
                     const resp = await this.givePermission(req)
                     console.info(JSON.stringify(resp))
                     msg.respond(buslive.GivePermission_Response.encode(resp).finish(), {})
+                } else if (msg.subject === bus_topics.auth.live.update_perm_group) {
+                    const req = buslive.UpdatePermissionGroup_Request.decode(msg.data)
+                    console.info(JSON.stringify(req))
+                    const resp = await this.updatePermGroup(req)
+                    console.info(JSON.stringify(resp))
+                    msg.respond(buslive.UpdatePermissionGroup_Response.encode(resp).finish(), {})
                 } else if (msg.subject === bus_topics.auth.live.create_perm_group) {
                     const req = buslive.AddPermissionGroup_Request.decode(msg.data)
                     console.info(JSON.stringify(req))
@@ -194,6 +200,20 @@ class ServiceContext {
         user.groups = user.groups.filter(x => !remove.has(x.ref))
 
         await this.db.users.replaceOne({ '_id': user._id }, user)
+        return {}
+    }
+
+    private async updatePermGroup(req: buslive.UpdatePermissionGroup_Request): Promise<buslive.UpdatePermissionGroup_Response> {
+        const grp = await this.db.groups.findOne({ _id: req.id })
+        if (!grp) {
+            throw new Error('group not found')
+        }
+
+        if (req.active !== undefined) {
+            grp.active = req.active
+        }
+
+        await this.db.groups.replaceOne({ _id: grp._id }, grp)
         return {}
     }
 

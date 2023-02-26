@@ -54,6 +54,14 @@ message AddPermissionGroup {
   }
 }
 
+message UpdatePermissionGroup {
+  message Request {
+    string id = 1;
+    optional bool active = 2;
+  }
+  message Response {}
+}
+
 message AddUserToGroup {
   message Request {
     string user_id = 1;
