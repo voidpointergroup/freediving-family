@@ -16,5 +16,15 @@ spec:
           port: 8080
           responseForwarding:
             flushInterval: 1ms
+    - kind: Rule
+      match: Host(`auth.freediving-family.chinook.k8s.voidpointergroup.com`)
+      priority: 10
+      services:
+        - kind: Service
+          name: keycloak
+          namespace: freediving-family
+          port: 8080
+          responseForwarding:
+            flushInterval: 1ms
   tls:
     certResolver: letsencrypt

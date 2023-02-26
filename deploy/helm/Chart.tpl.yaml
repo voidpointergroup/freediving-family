@@ -15,3 +15,8 @@ dependencies:
     alias: mongodb
     version: "13.6.1"
     repository: "https://charts.bitnami.com/bitnami"
+  - name: keycloak
+    alias: keycloak
+    version: "13.1.x"
+    repository: "https://charts.bitnami.com/bitnami"
+
