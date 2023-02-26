@@ -4,7 +4,7 @@ extend type User @key(fields: "id") {
   certs: [Cert!]!
   cert_attempts: [CertAttempt!]!
 
-  to_approve: [Requirement!]!
+  requirements_to_approve: [Requirement!]!
 }
 
 extend type Group @key(fields: "id") {

@@ -260,7 +260,7 @@ const resolvers: gql.Resolvers<RequestContext> = {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
             return (await ctx.svc.instance().findCertAttempts({ 'student.ref': partial.id! })).map(x => x.graphql())
         },
-        to_approve: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.Requirement[]>> => {
+        requirements_to_approve: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.Requirement[]>> => {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
             const attempts = await ctx.svc.instance().findCertAttempts({ 'approver.ref': partial.id! })
             const reqs: ut.DeepPartial<gql.Requirement>[] = []
