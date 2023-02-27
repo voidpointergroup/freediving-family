@@ -224,6 +224,18 @@ const resolvers: gql.Resolvers<RequestContext> = {
         requirement: async (_partial, params, ctx): Promise<ut.DeepPartial<gql.Requirement>> => {
             return (await ctx.svc.instance().readRequirement(params.id)).graphql()
         },
+        requirements_to_approve: async (_partial, _params, ctx): Promise<ut.DeepPartial<gql.Requirement[]>> => {
+            const attempts = await ctx.svc.instance().findCertAttempts({ 'approver.ref': ctx.svc.instance().gwctx.user.id })
+            const reqs: ut.DeepPartial<gql.Requirement>[] = []
+            for (const att of attempts) {
+                for (const req of await ctx.svc.instance().findRequirements({ 'attempt.ref': att.db._id! })) {
+                    if (req.db.observed && !req.db.approved) {
+                        reqs.push(req.graphql())
+                    }
+                }
+            }
+            return reqs
+        },
     },
     Requirement: {
         __resolveReference: async (partial, ctx): Promise<ut.DeepPartial<gql.Requirement>> => {
@@ -259,19 +271,6 @@ const resolvers: gql.Resolvers<RequestContext> = {
         cert_attempts: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.CertAttempt[]>> => {
             await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
             return (await ctx.svc.instance().findCertAttempts({ 'student.ref': partial.id! })).map(x => x.graphql())
-        },
-        requirements_to_approve: async (partial, _params, ctx): Promise<ut.DeepPartial<gql.Requirement[]>> => {
-            await ctx.svc.instance().authHelper.mustAccess(ctx.svc.instance().gwctx.user.id, 'read', partial.id!)
-            const attempts = await ctx.svc.instance().findCertAttempts({ 'approver.ref': partial.id! })
-            const reqs: ut.DeepPartial<gql.Requirement>[] = []
-            for (const att of attempts) {
-                for (const req of await ctx.svc.instance().findRequirements({ 'attempt.ref': att.db._id! })) {
-                    if (req.db.observed && !req.db.approved) {
-                        reqs.push(req.graphql())
-                    }
-                }
-            }
-            return reqs
         },
     },
     Mutation: {

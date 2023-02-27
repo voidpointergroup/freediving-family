@@ -3,8 +3,6 @@ extend type User @key(fields: "id") {
 
   certs: [Cert!]!
   cert_attempts: [CertAttempt!]!
-
-  requirements_to_approve: [Requirement!]!
 }
 
 extend type Group @key(fields: "id") {
@@ -61,6 +59,8 @@ extend type Query {
   cert_attempt(id: String!): CertAttempt!
   cert_template(id: String!): CertTemplate!
   requirement(id: String!): Requirement!
+
+  requirements_to_approve: [Requirement!]!
 }
 
 input CertAttemptCreateInput {
